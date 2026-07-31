@@ -1,0 +1,169 @@
+/* ==========================================================================
+   RaSpect Inspectica™ — Product stylesheet
+   Shared design system & components for all pages.
+   ========================================================================== */
+
+:root {
+  --brand-50: #f0fdfa;
+  --brand-100: #ccfbf1;
+  --brand-200: #99f6e4;
+  --brand-400: #2dd4bf;
+  --brand-500: #14b8a6;
+  --brand-600: #0d9488;
+  --brand-700: #0f766e;
+  --brand-800: #115e59;
+  --brand-900: #134e4a;
+  --ink: #0f172a;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+}
+
+html { scroll-behavior: smooth; }
+
+[x-cloak] { display: none !important; }
+
+/* Subtle dot background */
+.bg-grid-pattern {
+  background-size: 32px 32px;
+  background-image: radial-gradient(circle, rgba(148, 163, 184, 0.18) 1.2px, transparent 1.2px);
+}
+
+/* Glass panel aesthetic */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.glass-panel-interactive { transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+.glass-panel-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(20, 184, 166, 0.3);
+}
+
+/* Scan line animation */
+.scan-line {
+  background: linear-gradient(to bottom, transparent 0%, rgba(20, 184, 166, 0.3) 50%, transparent 100%);
+  animation: scan 2.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes scan {
+  0%, 100% { transform: translateY(-100%); }
+  50% { transform: translateY(100%); }
+}
+
+.pulse-ring { animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+@keyframes pulse-ring {
+  0% { transform: scale(0.92); opacity: 0.8; }
+  50% { transform: scale(1.08); opacity: 0.25; }
+  100% { transform: scale(0.92); opacity: 0.8; }
+}
+
+/* Custom slider thumb */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: var(--brand-600);
+  cursor: pointer;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+input[type="range"]::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: var(--brand-600);
+  cursor: pointer;
+  border: 3px solid #fff;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f8fafc; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: var(--brand-600); }
+
+/* Toast container & animation */
+#toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 24rem;
+}
+.toast {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  padding: 0.75rem 1.25rem;
+  border-radius: 1rem;
+}
+.toast-visible { opacity: 1; transform: translateY(0); }
+
+/* Sticky product nav */
+.site-nav .nav-link {
+  position: relative;
+  color: var(--slate-600);
+  transition: color 0.2s ease;
+}
+.site-nav .nav-link:hover { color: var(--ink); }
+.site-nav .nav-link.active { color: var(--brand-700); font-weight: 700; }
+.site-nav .nav-link.active::after {
+  content: "";
+  position: absolute;
+  left: 0.5rem;
+  right: 0.5rem;
+  bottom: -0.35rem;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--brand-500), var(--brand-400));
+}
+
+/* Primary CTA button */
+.btn-cta {
+  background: linear-gradient(90deg, var(--brand-600), #0d9488, var(--brand-400));
+  color: #fff;
+  font-weight: 800;
+  border-radius: 0.75rem;
+  box-shadow: 0 6px 16px -4px rgba(13, 148, 136, 0.45);
+  transition: all 0.2s ease;
+}
+.btn-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px -6px rgba(13, 148, 136, 0.55);
+}
+.btn-cta:active { transform: scale(0.97); }
+
+/* Score dial text helpers */
+.score-red { color: #dc2626; }
+.score-amber { color: #d97706; }
+.score-green { color: #059669; }
+
+/* Fade-in on scroll (landing) */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.revealed { opacity: 1; transform: translateY(0); }
+
+/* Modal panel should scroll when taller than viewport */
+.modal-scroll { max-height: 90vh; overflow-y: auto; }
+
+/* Print styles — generate a clean executive report via window.print() */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff !important; }
+  .print-report { display: block !important; }
+  .print-break { page-break-before: always; }
+}
+.print-report { display: none; }

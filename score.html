@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50 text-slate-900">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BuildingConditionScore | RaSpect Inspectica™ Intelligence</title>
+  <meta name="description" content="Generate an instant AI-powered BuildingConditionScore for any commercial or high-rise address. Powered by RaSpect Inspectica™.">
+
+  <script src="vendor/tailwind.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: { extend: {
+        colors: {
+          brand: { 50: "#f0fdfa", 100: "#ccfbf1", 200: "#99f6e4", 400: "#2dd4bf", 500: "#14b8a6", 600: "#0d9488", 700: "#0f766e", 800: "#115e59", 900: "#134e4a", glow: "rgba(20,184,166,0.25)" },
+          danger: { 50: "#fef2f2", 100: "#fee2e2", 500: "#ef4444", 600: "#dc2626", 700: "#b91c1c" },
+          warning: { 50: "#fffbe1", 100: "#fef3c7", 500: "#f59e0b", 600: "#d97706", 700: "#b45309" },
+          success: { 50: "#ecfdf5", 100: "#d1fae5", 500: "#10b981", 600: "#059669", 700: "#047857" }
+        },
+        fontFamily: { sans: ["Inter", "system-ui", "sans-serif"], mono: ["JetBrains Mono", "monospace"] },
+        boxShadow: {
+          glass: "0 8px 32px 0 rgba(15,23,42,0.06)",
+          "glow-teal": "0 0 25px -5px rgba(20,184,166,0.35)",
+          "card-hover": "0 20px 30px -10px rgba(15,23,42,0.08)"
+        }
+      } }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script defer src="vendor/alpine.js"></script>
+  <script defer src="vendor/lucide.js"></script>
+  <script src="vendor/chart.js"></script>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+
+<body class="h-full bg-slate-50 font-sans antialiased text-slate-900 flex flex-col selection:bg-brand-500 selection:text-white bg-grid-pattern relative"
+      x-data="buildingApp()" x-init="initApp()">
+
+  <div id="site-nav"></div>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 relative z-10">
+
+    <!-- ============ HERO / SEARCH ============ -->
+    <section class="relative overflow-hidden rounded-3xl glass-panel p-6 sm:p-10 border border-slate-200/90 shadow-glass">
+      <div class="absolute -top-32 -right-32 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-32 -left-32 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="max-w-3xl mx-auto text-center space-y-5 relative z-10">
+        <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white border border-brand-200 text-brand-800 text-xs font-semibold shadow-sm">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-500"></i>
+          <span>Inspectica™ Computer Vision & Geospatial Facade Diagnostics</span>
+        </div>
+
+        <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-tight">
+          Uncover Hidden Risks & Value Leakage in Your <span class="bg-gradient-to-r from-brand-600 via-teal-600 to-brand-500 bg-clip-text text-transparent">Building Envelope</span>
+        </h1>
+
+        <p class="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto">
+          Enter any commercial or high-rise address to calculate an instant <b>BuildingConditionScore</b>. Diagnose safety hazards, spalling liabilities, and energy loss against peer property benchmarks.
+        </p>
+
+        <div class="pt-2 max-w-2xl mx-auto relative">
+          <form @submit.prevent="runAnalysis()" class="relative flex flex-col sm:flex-row items-stretch gap-2 bg-white p-2.5 rounded-2xl border border-slate-300/90 shadow-xl focus-within:border-brand-500 focus-within:ring-4 focus-within:ring-brand-500/10 transition-all">
+            <div class="relative flex-1 flex items-center px-3">
+              <i data-lucide="map-pin" class="w-5 h-5 text-brand-600 flex-shrink-0"></i>
+              <input type="text" x-model="searchQuery" placeholder="Enter building address (e.g. 100 Queen's Road Central, HK)" aria-label="Building address" class="w-full bg-transparent px-3 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none font-medium">
+            </div>
+            <button type="submit" :disabled="!searchQuery.trim() || isAnalyzing" class="px-7 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-sm transition-all duration-200 flex items-center justify-center space-x-2 shadow-md shadow-brand-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 active:scale-95">
+              <i data-lucide="search" class="w-4 h-4"></i>
+              <span>Generate Score</span>
+            </button>
+          </form>
+
+          <div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500">
+            <span class="font-bold text-slate-600">Sample Assets:</span>
+            <template x-for="preset in sampleProperties" :key="preset.address">
+              <button @click="selectPreset(preset)" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-sm transition flex items-center space-x-1.5 hover:border-brand-300">
+                <i data-lucide="building-2" class="w-3.5 h-3.5 text-brand-600"></i>
+                <span class="font-medium" x-text="preset.title"></span>
+              </button>
+            </template>
+          </div>
+        </div>
+
+        <div class="pt-4 grid grid-cols-3 gap-2 border-t border-slate-200/80 max-w-xl mx-auto text-center font-mono text-[11px] text-slate-600">
+          <div><strong class="text-slate-900 font-bold">4,200+</strong> Facades Scanned</div>
+          <div><strong class="text-brand-700 font-bold">99.4%</strong> Defect Accuracy</div>
+          <div><strong class="text-slate-900 font-bold">$18.4M+</strong> Risk Prevented</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LOADING ============ -->
+    <section x-show="isAnalyzing" x-cloak x-transition:enter="transition ease-out duration-300" class="rounded-3xl glass-panel p-8 sm:p-12 text-center border border-brand-500/40 relative overflow-hidden shadow-xl">
+      <div class="absolute inset-0 scan-line pointer-events-none"></div>
+      <div class="max-w-md mx-auto space-y-6 relative z-10">
+        <div class="relative w-24 h-24 mx-auto flex items-center justify-center">
+          <div class="absolute inset-0 rounded-full bg-brand-500/20 pulse-ring"></div>
+          <div class="w-16 h-16 rounded-full bg-white border-2 border-brand-500 flex items-center justify-center shadow-xl shadow-brand-500/20">
+            <i data-lucide="radar" class="w-8 h-8 text-brand-600 animate-spin" style="animation-duration: 3.5s;"></i>
+          </div>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-slate-900">Running Spectro-Geospatial Analysis...</h3>
+          <p class="text-xs text-brand-700 font-mono mt-1 font-bold" x-text="currentScanStep"></p>
+        </div>
+        <div class="w-full bg-slate-200/80 rounded-full h-3 overflow-hidden border border-slate-300/80">
+          <div class="bg-gradient-to-r from-brand-600 via-brand-500 to-teal-400 h-3 rounded-full transition-all duration-300" :style="`width: ${scanProgress}%`"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-left text-xs font-mono text-slate-600 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+          <div>> GIS Footprint: <span class="text-slate-900 font-bold">FETCHED</span></div>
+          <div>> Structural Age: <span class="text-slate-900 font-bold" x-text="activeBuilding.yearBuilt + ' YRS'"></span></div>
+          <div>> Typhoon Shear: <span class="text-slate-900 font-bold">ZONE 1 (HIGH)</span></div>
+          <div>> Inspectica Score: <span class="text-brand-600 font-bold">CALCULATING</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RESULTS ============ -->
+    <section x-show="hasAnalyzed && !isAnalyzing" x-cloak x-transition:enter="transition ease-out duration-500" class="space-y-8">
+
+      <!-- Building info header -->
+      <div class="glass-panel p-5 sm:p-6 rounded-3xl border border-slate-200/90 flex flex-col md:flex-row md:items-center justify-between gap-5 shadow-sm">
+        <div class="flex items-start space-x-4">
+          <div class="p-3.5 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 flex-shrink-0 shadow-sm">
+            <i data-lucide="building-2" class="w-7 h-7"></i>
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="text-xl font-black text-slate-900 tracking-tight" x-text="activeBuilding.address"></h2>
+              <span class="px-2.5 py-0.5 text-[10px] font-extrabold rounded-full bg-slate-100 border border-slate-200 text-slate-700 uppercase tracking-wider" x-text="activeBuilding.type"></span>
+              <a :href="activeBuilding.googleMapsUrl" target="_blank" rel="noopener" class="inline-flex items-center space-x-1 px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition">
+                <i data-lucide="map-pin" class="w-3 h-3 text-blue-600"></i>
+                <span>Google Maps Place</span>
+              </a>
+            </div>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 mt-1.5 font-mono">
+              <span>Built: <strong class="text-slate-900" x-text="activeBuilding.yearBuilt"></strong></span>
+              <span>•</span>
+              <span>Floors: <strong class="text-slate-900" x-text="activeBuilding.floors"></strong></span>
+              <span>•</span>
+              <span>Facade Area: <strong class="text-slate-900" x-text="activeBuilding.facadeArea + ' m²'"></strong></span>
+              <span>•</span>
+              <span>Google Rating: <strong class="text-amber-600" x-text="activeBuilding.mapRating + ' ★ (' + activeBuilding.reviewsCount + ' reviews)'"></strong></span>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center space-x-3 self-end md:self-center flex-shrink-0">
+          <button @click="openInspectionModal()" class="px-4 py-2.5 text-xs font-bold rounded-xl bg-brand-600 hover:bg-brand-700 text-white transition flex items-center space-x-1.5 shadow-md shadow-brand-600/20 active:scale-95">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+            <span>Claim Free Inspection</span>
+          </button>
+          <button @click="openPdfModal()" class="px-4 py-2.5 text-xs font-semibold rounded-xl bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 transition flex items-center space-x-1.5 shadow-sm active:scale-95">
+            <i data-lucide="download" class="w-4 h-4 text-slate-500"></i>
+            <span>Export Executive PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Telemetry + Occupant insights -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-7 glass-panel rounded-3xl border border-slate-200/90 overflow-hidden shadow-sm flex flex-col justify-between">
+          <div class="p-4 sm:p-5 border-b border-slate-200/80 flex items-center justify-between flex-wrap gap-2 bg-slate-50/50">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="camera" class="w-4 h-4 text-brand-600"></i>
+              <h3 class="font-bold text-sm text-slate-900">Facade Scan Telemetry & Street View</h3>
+            </div>
+            <div class="flex bg-slate-200 p-1 rounded-xl text-[11px] font-bold" role="tablist" aria-label="View mode">
+              <button @click="viewMode = 'photo'" :class="viewMode === 'photo' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'" class="px-3 py-1 rounded-lg transition" role="tab">Visual View</button>
+              <button @click="viewMode = 'thermal'" :class="viewMode === 'thermal' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'" class="px-3 py-1 rounded-lg transition flex items-center space-x-1" role="tab">
+                <i data-lucide="flame" class="w-3 h-3"></i>
+                <span>AI Thermal Defect Overlay</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="relative h-72 sm:h-80 bg-slate-900 overflow-hidden group">
+            <img :src="activeBuilding.image" :alt="activeBuilding.address" class="w-full h-full object-cover transition-all duration-500" :class="viewMode === 'thermal' ? 'filter saturate-200 contrast-200 brightness-75 hue-rotate-180 opacity-90' : 'group-hover:scale-105'">
+            <div x-show="viewMode === 'thermal'" class="absolute inset-0 bg-grid-pattern opacity-40 pointer-events-none"></div>
+
+            <div class="absolute top-1/4 left-1/3 group/pin cursor-pointer">
+              <div class="w-5 h-5 rounded-full bg-red-500/80 border-2 border-white animate-ping absolute inset-0"></div>
+              <div class="w-5 h-5 rounded-full bg-red-600 border-2 border-white relative z-10 flex items-center justify-center text-white text-[9px] font-bold">!</div>
+              <div class="absolute left-6 top-0 w-48 p-2.5 rounded-xl bg-slate-900/95 text-white text-[10px] space-y-1 opacity-0 group-hover/pin:opacity-100 transition-opacity z-20 pointer-events-none shadow-xl border border-red-500/50">
+                <span class="font-bold text-red-400 block">Defect Tag: Concrete Spalling</span>
+                <p class="text-slate-300">Exterior cladding micro-fracture detected on Floor 22 East elevation.</p>
+              </div>
+            </div>
+
+            <div class="absolute bottom-1/3 right-1/4 group/pin cursor-pointer">
+              <div class="w-5 h-5 rounded-full bg-amber-500/80 border-2 border-white animate-ping absolute inset-0"></div>
+              <div class="w-5 h-5 rounded-full bg-amber-600 border-2 border-white relative z-10 flex items-center justify-center text-white text-[9px] font-bold">!</div>
+              <div class="absolute right-6 top-0 w-48 p-2.5 rounded-xl bg-slate-900/95 text-white text-[10px] space-y-1 opacity-0 group-hover/pin:opacity-100 transition-opacity z-20 pointer-events-none shadow-xl border border-amber-500/50">
+                <span class="font-bold text-amber-400 block">Defect Tag: Thermal Leakage</span>
+                <p class="text-slate-300">EPDM window seal shrinkage causing HVAC loss.</p>
+              </div>
+            </div>
+
+            <div class="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md text-white px-3 py-1.5 rounded-xl text-xs flex items-center space-x-2 border border-white/20">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-400"></i>
+              <span class="font-mono text-[11px]" x-text="activeBuilding.address"></span>
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-slate-50 border-t border-slate-200/80 text-xs text-slate-600 flex items-center justify-between font-mono">
+            <span>Coordinates: <strong class="text-slate-800" x-text="activeBuilding.coordinates"></strong></span>
+            <span class="text-brand-700 font-bold flex items-center space-x-1">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+              <span>Inspectica Vision Validated</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 glass-panel rounded-3xl border border-slate-200/90 p-5 sm:p-6 flex flex-col justify-between shadow-sm">
+          <div>
+            <div class="flex items-center justify-between border-b border-slate-200/80 pb-3 mb-4">
+              <div>
+                <div class="flex items-center space-x-2">
+                  <i data-lucide="message-square-quote" class="w-5 h-5 text-brand-600"></i>
+                  <h3 class="font-bold text-base text-slate-900">Google Maps Occupant Insights</h3>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">Sourced public comments on building condition & safety</p>
+              </div>
+              <span class="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold flex items-center space-x-1">
+                <span>★</span>
+                <span x-text="activeBuilding.mapRating"></span>
+              </span>
+            </div>
+            <div class="space-y-3 max-h-72 overflow-y-auto pr-1">
+              <template x-for="comment in activeBuilding.googleComments" :key="comment.author">
+                <div class="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-2 hover:border-brand-300 transition">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                      <div class="w-7 h-7 rounded-full bg-brand-100 text-brand-700 font-bold text-xs flex items-center justify-center font-mono" x-text="comment.author.substring(0,1)"></div>
+                      <div>
+                        <h4 class="font-bold text-xs text-slate-900" x-text="comment.author"></h4>
+                        <span class="text-[10px] text-slate-400 block" x-text="comment.date + ' • Google Maps Local Guide'"></span>
+                      </div>
+                    </div>
+                    <div class="text-amber-500 text-xs font-bold" x-text="'★'.repeat(comment.rating)"></div>
+                  </div>
+                  <p class="text-xs text-slate-600 italic leading-relaxed" x-text="'“' + comment.text + '”'"></p>
+                  <div class="flex items-center justify-between text-[10px] pt-1">
+                    <span class="px-2 py-0.5 rounded bg-slate-100 font-mono font-semibold text-slate-600" x-text="'Topic: ' + comment.topic"></span>
+                    <span class="text-slate-400 font-mono" x-text="comment.helpful + ' people found helpful'"></span>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs text-slate-500">
+            <span class="text-[11px]">Real-time NLP sentiment analysis applied</span>
+            <a :href="activeBuilding.googleMapsUrl" target="_blank" rel="noopener" class="text-brand-700 font-bold hover:underline flex items-center space-x-1">
+              <span>View All on Google Maps</span>
+              <i data-lucide="external-link" class="w-3 h-3"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Score + Financial grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-5 glass-panel p-6 sm:p-8 rounded-3xl border border-slate-200/90 flex flex-col justify-between relative overflow-hidden shadow-sm">
+          <div class="flex items-center justify-between border-b border-slate-200/80 pb-4">
+            <div>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Composite Health Rating</span>
+              <h3 class="text-xl font-black text-slate-900">BuildingConditionScore</h3>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wide border shadow-sm" :class="scoreBadgeClass(overallScore)">
+              <span x-text="scoreCategoryText(overallScore)"></span>
+            </span>
+          </div>
+
+          <div class="my-6 flex flex-col items-center justify-center relative">
+            <div class="w-56 h-56 relative flex items-center justify-center">
+              <canvas id="gaugeCanvas" width="220" height="220" role="img" :aria-label="'BuildingConditionScore ' + overallScore + ' out of 100'"></canvas>
+              <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                <span class="text-5xl font-black tracking-tight text-slate-900 font-mono" x-text="overallScore"></span>
+                <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider mt-0.5">Out of 100</span>
+                <span class="text-[11px] font-bold mt-1 px-2.5 py-0.5 rounded-md" :class="overallScore < 50 ? 'text-red-600 bg-red-50 border border-red-100' : 'text-amber-600 bg-amber-50 border border-amber-100'" x-text="overallScore < 50 ? '⚠️ High Liability Zone' : 'Moderate Attention Needed'"></span>
+              </div>
+            </div>
+            <p class="text-xs text-center text-slate-600 max-w-xs mt-3 leading-relaxed">
+              A low BuildingConditionScore indicates elevated risk of facade spalling, window seal leaks, and unmitigated thermal loss.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2.5 pt-4 border-t border-slate-200/80">
+            <div class="p-3 rounded-2xl bg-white border border-slate-200/80 text-center shadow-sm">
+              <span class="text-[10px] text-slate-500 uppercase block font-bold">Safety</span>
+              <span class="text-lg font-black font-mono" :class="scoreColorText(activeBuilding.safetyScore)" x-text="activeBuilding.safetyScore + '/100'"></span>
+            </div>
+            <div class="p-3 rounded-2xl bg-white border border-slate-200/80 text-center shadow-sm">
+              <span class="text-[10px] text-slate-500 uppercase block font-bold">Serviceability</span>
+              <span class="text-lg font-black font-mono" :class="scoreColorText(activeBuilding.serviceabilityScore)" x-text="activeBuilding.serviceabilityScore + '/100'"></span>
+            </div>
+            <div class="p-3 rounded-2xl bg-white border border-slate-200/80 text-center shadow-sm">
+              <span class="text-[10px] text-slate-500 uppercase block font-bold">Sustainability</span>
+              <span class="text-lg font-black font-mono" :class="scoreColorText(activeBuilding.sustainabilityScore)" x-text="activeBuilding.sustainabilityScore + '/100'"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-7 space-y-6">
+          <div class="glass-panel p-6 rounded-3xl border border-red-200/80 bg-gradient-to-r from-red-50/80 via-slate-50 to-white shadow-sm">
+            <div class="flex items-center space-x-2 text-red-600 text-xs font-black uppercase tracking-wider mb-3">
+              <i data-lucide="trending-down" class="w-4 h-4"></i>
+              <span>Estimated Annual Value Leakage & Risk Exposure</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-2">
+              <div class="p-3 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+                <span class="text-xs text-slate-500 block font-medium">Annual Energy Waste</span>
+                <span class="text-2xl font-black text-slate-900 font-mono" x-text="formatCurrency(activeBuilding.financialImpact.energyWaste)"></span>
+                <span class="text-[10px] text-amber-600 block font-semibold mt-0.5">Uninsulated thermal leaks</span>
+              </div>
+              <div class="p-3 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+                <span class="text-xs text-slate-500 block font-medium">Insurance Surcharge</span>
+                <span class="text-2xl font-black text-slate-900 font-mono" x-text="formatCurrency(activeBuilding.financialImpact.insuranceSurcharge)"></span>
+                <span class="text-[10px] text-red-600 block font-semibold mt-0.5">Unverified facade risk</span>
+              </div>
+              <div class="p-3 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+                <span class="text-xs text-slate-500 block font-medium">5-Yr Deferred Penalty</span>
+                <span class="text-2xl font-black text-red-600 font-mono" x-text="formatCurrency(activeBuilding.financialImpact.deferredMaintenancePenalty)"></span>
+                <span class="text-[10px] text-slate-500 block font-semibold mt-0.5">Compounding structural decay</span>
+              </div>
+            </div>
+            <div class="mt-3 p-3 rounded-xl bg-white border border-slate-200/80 text-xs text-slate-700 flex items-center space-x-2 shadow-sm">
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-500 flex-shrink-0"></i>
+              <span>Unchecked envelope defects increase repair costs by <strong>3.4x</strong> every 24 months.</span>
+            </div>
+          </div>
+
+          <div class="glass-panel p-6 rounded-3xl border border-slate-200/90 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h4 class="text-base font-bold text-slate-900">District Peer Group Comparison</h4>
+                <p class="text-xs text-slate-500">Benchmarked against <span class="text-brand-700 font-bold" x-text="activeBuilding.peerGroupCount"></span> similar high-rise assets in district</p>
+              </div>
+              <span class="px-3 py-1 text-xs font-mono rounded-xl bg-slate-100 text-slate-700 border border-slate-200 font-bold">
+                Rank: <strong class="text-red-600" x-text="ordinal(activeBuilding.peerPercentile)"></strong> Percentile
+              </span>
+            </div>
+            <div class="h-48 w-full">
+              <canvas id="peerChart" aria-label="Peer comparison chart" role="img"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KRI Diagnostics -->
+      <div class="space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="text-xl font-extrabold text-slate-900">Key Risk Indicators (KRI Diagnostics)</h3>
+            <p class="text-xs text-slate-500">Detailed breakdown across Safety, Serviceability, and Sustainability pillars</p>
+          </div>
+          <div class="flex space-x-1 bg-slate-200/70 p-1 rounded-2xl border border-slate-300/70 text-xs self-start sm:self-auto" role="tablist" aria-label="KRI category">
+            <button @click="activeTab = 'safety'" :class="activeTab === 'safety' ? 'bg-brand-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900 font-medium'" class="px-4 py-1.5 rounded-xl transition" role="tab">Safety</button>
+            <button @click="activeTab = 'serviceability'" :class="activeTab === 'serviceability' ? 'bg-brand-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900 font-medium'" class="px-4 py-1.5 rounded-xl transition" role="tab">Serviceability</button>
+            <button @click="activeTab = 'sustainability'" :class="activeTab === 'sustainability' ? 'bg-brand-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900 font-medium'" class="px-4 py-1.5 rounded-xl transition" role="tab">Sustainability</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <template x-for="kri in currentKriList" :key="kri.name">
+            <div class="glass-panel glass-panel-interactive p-5 rounded-2xl border border-slate-200/90 space-y-3 shadow-sm">
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex items-center space-x-2.5">
+                  <div class="p-2 rounded-xl bg-brand-50 border border-brand-200 text-brand-600">
+                    <i :data-lucide="kri.icon" class="w-4 h-4"></i>
+                  </div>
+                  <h4 class="font-bold text-sm text-slate-900 leading-snug" x-text="kri.name"></h4>
+                </div>
+                <span class="px-2 py-0.5 text-[10px] font-extrabold rounded font-mono flex-shrink-0" :class="kriLevelBadge(kri.level)" x-text="kri.level"></span>
+              </div>
+              <p class="text-xs text-slate-600 leading-relaxed" x-text="kri.description"></p>
+              <div class="pt-3 border-t border-slate-200/80 flex items-center justify-between text-[11px] font-mono text-slate-500">
+                <span>Impact Zone: <strong class="text-slate-800" x-text="kri.affectedArea"></strong></span>
+                <span class="text-brand-700 font-bold" x-text="kri.mitigationROI + ' ROI'"></span>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Simulator -->
+      <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-brand-500/30 relative overflow-hidden shadow-sm">
+        <div class="max-w-2xl mb-6">
+          <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold mb-2">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+            <span>Inspectica™ AI Drone Solution vs. Traditional Manual Scaffolding</span>
+          </div>
+          <h3 class="text-2xl font-black text-slate-900">Why Traditional Inspections Leave You Exposed</h3>
+          <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+            Manual rope access and scaffolding miss up to <strong class="text-amber-600">60% of elevated micro-defects</strong> while incurring heavy scaffolding downtime, high labor risk, and tenant disturbance.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-slate-100/80 p-6 rounded-2xl border border-slate-200/80">
+          <div class="lg:col-span-5 space-y-5">
+            <h4 class="text-xs font-black uppercase tracking-wider text-slate-500">Simulate Inspection Economics</h4>
+            <div>
+              <div class="flex justify-between text-xs mb-1.5">
+                <span class="text-slate-700 font-semibold">Building Height / Stories:</span>
+                <span class="font-mono font-bold text-brand-700" x-text="simHeight + ' Floors'"></span>
+              </div>
+              <input type="range" min="10" max="80" x-model="simHeight" aria-label="Building height in floors" class="w-full accent-brand-600 bg-slate-200 rounded-lg cursor-pointer">
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1.5">
+                <span class="text-slate-700 font-semibold">Inspection Frequency:</span>
+                <span class="font-mono font-bold text-brand-700" x-text="simFrequency + ' Months'"></span>
+              </div>
+              <input type="range" min="6" max="36" step="6" x-model="simFrequency" aria-label="Inspection frequency in months" class="w-full accent-brand-600 bg-slate-200 rounded-lg cursor-pointer">
+            </div>
+            <div class="p-3.5 rounded-xl bg-white border border-slate-200/80 text-xs text-slate-600 shadow-sm">
+              Adjust height & frequency sliders to calculate live cost savings, inspection duration, and defect accuracy.
+            </div>
+          </div>
+
+          <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="p-5 rounded-2xl bg-red-50/70 border border-red-200 space-y-3 shadow-sm">
+              <div class="flex items-center justify-between border-b border-red-200/80 pb-2">
+                <span class="text-xs font-bold text-red-700 uppercase">Traditional Manual Method</span>
+                <i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i>
+              </div>
+              <div class="space-y-1.5 font-mono text-xs">
+                <div class="flex justify-between text-slate-600"><span>Est. Cost:</span> <span class="text-slate-900 font-bold" x-text="formatCurrency(calcTraditionalCost)"></span></div>
+                <div class="flex justify-between text-slate-600"><span>Duration:</span> <span class="text-slate-900 font-bold" x-text="calcTraditionalDays + ' Days'"></span></div>
+                <div class="flex justify-between text-slate-600"><span>Defect Accuracy:</span> <span class="text-red-600 font-bold">~42%</span></div>
+                <div class="flex justify-between text-slate-600"><span>Human Risk:</span> <span class="text-red-600 font-bold">HIGH</span></div>
+              </div>
+            </div>
+            <div class="p-5 rounded-2xl bg-brand-50/80 border border-brand-300 space-y-3 relative overflow-hidden shadow-sm">
+              <div class="absolute top-0 right-0 px-2.5 py-0.5 bg-brand-600 text-white text-[9px] font-black uppercase rounded-bl-lg">Recommended</div>
+              <div class="flex items-center justify-between border-b border-brand-200/80 pb-2">
+                <span class="text-xs font-bold text-brand-800 uppercase">Inspectica™ Drone AI</span>
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-brand-600"></i>
+              </div>
+              <div class="space-y-1.5 font-mono text-xs">
+                <div class="flex justify-between text-slate-600"><span>Est. Cost:</span> <span class="text-brand-700 font-bold" x-text="formatCurrency(calcDroneCost)"></span></div>
+                <div class="flex justify-between text-slate-600"><span>Duration:</span> <span class="text-brand-700 font-bold" x-text="calcDroneDays + ' Hours'"></span></div>
+                <div class="flex justify-between text-slate-600"><span>Defect Accuracy:</span> <span class="text-brand-700 font-bold">99.4% (AI Visual)</span></div>
+                <div class="flex justify-between text-slate-600"><span>Human Risk:</span> <span class="text-brand-700 font-bold">ZERO (Autonomous)</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-brand-50 via-white to-brand-50 border border-brand-200 shadow-sm">
+          <div class="flex items-center space-x-3.5">
+            <div class="w-11 h-11 rounded-2xl bg-brand-100 border border-brand-200 flex items-center justify-center text-brand-600 flex-shrink-0 shadow-sm">
+              <i data-lucide="shield-check" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h5 class="font-extrabold text-sm text-slate-900">Turn Risk into Asset Protection</h5>
+              <p class="text-xs text-slate-600 mt-0.5">Book an expert-led Inspectica™ drone scan to validate your BuildingConditionScore with millimeter precision.</p>
+            </div>
+          </div>
+          <button @click="openInspectionModal()" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center space-x-2 shadow-md shadow-brand-600/20 flex-shrink-0 active:scale-95">
+            <span>Schedule Free Drone Inspection</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ============ LEAD MODAL ============ -->
+  <div x-show="showLeadModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+    <div @click.away="showLeadModal = false" x-transition class="modal-scroll w-full max-w-lg bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-2xl relative">
+      <button @click="showLeadModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition" aria-label="Close">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <div class="space-y-4">
+        <div class="flex items-center space-x-3">
+          <div class="p-3 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600">
+            <i data-lucide="send" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-900">Schedule Drone Scan Consultation</h3>
+            <p class="text-xs text-slate-500">RaSpect Inspectica™ Certified Structural Scan</p>
+          </div>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 font-mono">
+          Target Asset: <strong class="text-brand-700 font-sans" x-text="activeBuilding.address"></strong>
+        </div>
+        <form @submit.prevent="submitLeadForm()" class="space-y-3.5 text-xs" novalidate>
+          <div>
+            <label for="lead-name" class="block text-slate-700 font-semibold mb-1">Full Name *</label>
+            <input id="lead-name" type="text" x-model="leadForm.name" required placeholder="John Doe" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:border-brand-500 focus:bg-white focus:outline-none transition">
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label for="lead-email" class="block text-slate-700 font-semibold mb-1">Work Email *</label>
+              <input id="lead-email" type="email" x-model="leadForm.email" required placeholder="j.doe@buildingcorp.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:border-brand-500 focus:bg-white focus:outline-none transition">
+            </div>
+            <div>
+              <label for="lead-phone" class="block text-slate-700 font-semibold mb-1">Phone Number *</label>
+              <input id="lead-phone" type="tel" x-model="leadForm.phone" required placeholder="+852 9123 4567" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:border-brand-500 focus:bg-white focus:outline-none transition">
+            </div>
+          </div>
+          <div>
+            <label for="lead-role" class="block text-slate-700 font-semibold mb-1">Role / Interest</label>
+            <select id="lead-role" x-model="leadForm.role" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:border-brand-500 focus:bg-white focus:outline-none transition">
+              <option value="Building Owner / Asset Manager">Building Owner / Asset Manager</option>
+              <option value="Property / Facility Manager">Property / Facility Manager</option>
+              <option value="Structural Engineer / Surveyor">Structural Engineer / Surveyor</option>
+              <option value="Insurance / Risk Underwriter">Insurance / Risk Underwriter</option>
+            </select>
+          </div>
+          <div>
+            <label for="lead-notes" class="block text-slate-700 font-semibold mb-1">Special Inspection Requirements</label>
+            <textarea id="lead-notes" x-model="leadForm.notes" rows="2" placeholder="e.g. Focus on east elevation curtain wall leakage" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:border-brand-500 focus:bg-white focus:outline-none transition"></textarea>
+          </div>
+          <p x-show="leadFormError" x-cloak class="text-red-600 font-semibold bg-red-50 border border-red-200 rounded-xl px-3 py-2" x-text="leadFormError"></p>
+          <div class="pt-2">
+            <button type="submit" :disabled="isSubmitting" class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold transition flex items-center justify-center space-x-2 shadow-md shadow-brand-600/20 active:scale-95 disabled:opacity-60">
+              <i data-lucide="check-circle" class="w-4 h-4"></i>
+              <span x-text="isSubmitting ? 'Submitting...' : 'Confirm & Schedule Free Scan'"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PDF MODAL ============ -->
+  <div x-show="showPdfModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+    <div @click.away="showPdfModal = false" x-transition class="modal-scroll w-full max-w-md bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-2xl relative">
+      <button @click="showPdfModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition" aria-label="Close">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <div class="space-y-4">
+        <div class="flex items-center space-x-3">
+          <div class="p-3 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600">
+            <i data-lucide="file-text" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-900">Export Executive Report</h3>
+            <p class="text-xs text-slate-500">Receive an instant digital PDF delivery</p>
+          </div>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 font-mono">
+          Target Asset: <strong class="text-brand-700 font-sans" x-text="activeBuilding.address"></strong>
+        </div>
+        <form @submit.prevent="confirmPdfExport()" class="space-y-3 text-xs" novalidate>
+          <div>
+            <label for="pdf-name" class="block text-slate-700 font-semibold mb-1">Full Name *</label>
+            <input id="pdf-name" type="text" x-model="pdfForm.name" required placeholder="John Doe" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:border-brand-500 focus:bg-white focus:outline-none transition">
+          </div>
+          <div>
+            <label for="pdf-email" class="block text-slate-700 font-semibold mb-1">Work Email Address (for PDF Delivery) *</label>
+            <input id="pdf-email" type="email" x-model="pdfForm.email" required placeholder="executive@buildingcorp.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:border-brand-500 focus:bg-white focus:outline-none transition">
+          </div>
+          <p x-show="pdfFormError" x-cloak class="text-red-600 font-semibold bg-red-50 border border-red-200 rounded-xl px-3 py-2" x-text="pdfFormError"></p>
+          <div class="pt-2">
+            <button type="submit" :disabled="isSubmitting" class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold transition flex items-center justify-center space-x-2 shadow-md shadow-brand-600/20 active:scale-95 disabled:opacity-60">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span x-text="isSubmitting ? 'Generating...' : 'Generate & Export PDF Report'"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ METHODOLOGY MODAL ============ -->
+  <div x-show="showMethodology" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+    <div @click.away="showMethodology = false" x-transition class="modal-scroll w-full max-w-2xl bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-2xl relative">
+      <button @click="showMethodology = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition" aria-label="Close">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <div class="space-y-4">
+        <div class="flex items-center space-x-2.5">
+          <i data-lucide="book-open" class="w-6 h-6 text-brand-600"></i>
+          <h3 class="text-xl font-bold text-slate-900">BuildingConditionScore Analytics Methodology</h3>
+        </div>
+        <p class="text-xs text-slate-600 leading-relaxed">
+          The <strong>BuildingConditionScore</strong> combines multi-layered architectural telemetry, historical weather stress indexes, regional building permit records, and RaSpect's proprietary Inspectica AI vision benchmark database.
+        </p>
+        <div class="space-y-3 text-xs">
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+            <h4 class="font-bold text-brand-700 mb-1">1. Safety Index (40% Weight)</h4>
+            <p class="text-slate-600 leading-relaxed">Evaluates facade failure risk, spalling concrete, window frame degradation, and typhoon wind shear stress based on age, construction type, and local storm zones.</p>
+          </div>
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+            <h4 class="font-bold text-brand-700 mb-1">2. Serviceability Index (35% Weight)</h4>
+            <p class="text-slate-600 leading-relaxed">Calculates moisture ingress probability, sealant shrinkage, thermal movement impact, and tenant environmental comfort scores.</p>
+          </div>
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+            <h4 class="font-bold text-brand-700 mb-1">3. Sustainability Index (25% Weight)</h4>
+            <p class="text-slate-600 leading-relaxed">Estimates thermal loss through facade envelope, HVAC operational overhead penalty, and carbon footprint alignment with municipal green standards.</p>
+          </div>
+        </div>
+        <div class="pt-2 text-right">
+          <button @click="showMethodology = false" class="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-800 transition">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PRINTABLE EXECUTIVE REPORT ============ -->
+  <div id="print-report" class="print-report bg-white text-slate-900 p-8">
+    <div class="flex items-center justify-between border-b-2 border-brand-600 pb-4 mb-6">
+      <div>
+        <div class="text-2xl font-black tracking-tight">BuildingConditionScore</div>
+        <div class="text-xs text-slate-500">Executive Diagnostic Report — Powered by RaSpect Inspectica™ AI</div>
+      </div>
+      <div class="text-right text-xs text-slate-500">
+        <div class="font-mono" x-text="reportDate"></div>
+        <div class="font-mono">Reference: <span x-text="reportRef"></span></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-6 mb-8">
+      <div>
+        <h3 class="text-sm font-black uppercase tracking-wider text-brand-700 mb-2">Target Asset</h3>
+        <div class="text-lg font-black" x-text="activeBuilding.address"></div>
+        <div class="text-xs text-slate-500 font-mono mt-1">
+          <div>Type: <strong x-text="activeBuilding.type"></strong></div>
+          <div>Built: <strong x-text="activeBuilding.yearBuilt"></strong> · Floors: <strong x-text="activeBuilding.floors"></strong></div>
+          <div>Facade Area: <strong x-text="activeBuilding.facadeArea + ' m²'"></strong></div>
+        </div>
+      </div>
+      <div class="text-right">
+        <h3 class="text-sm font-black uppercase tracking-wider text-brand-700 mb-2">BuildingConditionScore</h3>
+        <div class="text-6xl font-black font-mono" x-text="overallScore"></div>
+        <div class="text-xs font-bold uppercase tracking-wide mt-1" x-text="scoreCategoryText(overallScore)"></div>
+        <div class="text-[11px] text-slate-500 mt-1 font-mono">Peer rank: <strong x-text="ordinal(activeBuilding.peerPercentile)"></strong> percentile of <span x-text="activeBuilding.peerGroupCount"></span> assets</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-4 mb-8">
+      <div class="border border-slate-200 rounded-xl p-4">
+        <div class="text-[11px] uppercase font-bold text-slate-500">Safety Index</div>
+        <div class="text-3xl font-black font-mono" x-text="activeBuilding.safetyScore + '/100'"></div>
+      </div>
+      <div class="border border-slate-200 rounded-xl p-4">
+        <div class="text-[11px] uppercase font-bold text-slate-500">Serviceability Index</div>
+        <div class="text-3xl font-black font-mono" x-text="activeBuilding.serviceabilityScore + '/100'"></div>
+      </div>
+      <div class="border border-slate-200 rounded-xl p-4">
+        <div class="text-[11px] uppercase font-bold text-slate-500">Sustainability Index</div>
+        <div class="text-3xl font-black font-mono" x-text="activeBuilding.sustainabilityScore + '/100'"></div>
+      </div>
+    </div>
+
+    <div class="mb-8">
+      <h3 class="text-sm font-black uppercase tracking-wider text-brand-700 mb-3">Estimated Annual Value Leakage</h3>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="border border-red-200 bg-red-50/50 rounded-xl p-4">
+          <div class="text-[11px] uppercase font-bold text-slate-500">Energy Waste</div>
+          <div class="text-xl font-black font-mono" x-text="formatCurrency(activeBuilding.financialImpact.energyWaste)"></div>
+        </div>
+        <div class="border border-red-200 bg-red-50/50 rounded-xl p-4">
+          <div class="text-[11px] uppercase font-bold text-slate-500">Insurance Surcharge</div>
+          <div class="text-xl font-black font-mono" x-text="formatCurrency(activeBuilding.financialImpact.insuranceSurcharge)"></div>
+        </div>
+        <div class="border border-red-200 bg-red-50/50 rounded-xl p-4">
+          <div class="text-[11px] uppercase font-bold text-slate-500">5-Yr Deferred Penalty</div>
+          <div class="text-xl font-black font-mono" x-text="formatCurrency(activeBuilding.financialImpact.deferredMaintenancePenalty)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h3 class="text-sm font-black uppercase tracking-wider text-brand-700 mb-3">Key Risk Indicators</h3>
+      <table class="w-full text-xs border-collapse">
+        <thead>
+          <tr class="border-b-2 border-slate-200 text-left">
+            <th class="py-2 pr-3">Pillar</th>
+            <th class="py-2 pr-3">Risk Indicator</th>
+            <th class="py-2 pr-3">Level</th>
+            <th class="py-2 pr-3">Impact Zone</th>
+            <th class="py-2 text-right">Mitigation ROI</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="kri in allKri" :key="kri.name + kri.level">
+            <tr class="border-b border-slate-100">
+              <td class="py-2 pr-3 font-semibold" x-text="kriPillar(kri)"></td>
+              <td class="py-2 pr-3" x-text="kri.name"></td>
+              <td class="py-2 pr-3 font-bold" :class="kri.level === 'CRITICAL' ? 'text-red-600' : kri.level === 'HIGH' ? 'text-amber-600' : 'text-blue-600'" x-text="kri.level"></td>
+              <td class="py-2 pr-3" x-text="kri.affectedArea"></td>
+              <td class="py-2 text-right font-mono" x-text="kri.mitigationROI + 'x'"></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-8 pt-4 border-t border-slate-200 text-[10px] text-slate-400">
+      This report is a diagnostic estimate produced by RaSpect's BuildingConditionScore model. It does not replace a statutory
+      inspection. Please consult a licensed building professional before undertaking any repair works.
+      © 2026 RaSpect Intelligence Ltd. All rights reserved.
+    </div>
+  </div>
+
+  <div id="site-footer"></div>
+  <div id="toast-container"></div>
+
+  <script src="assets/js/utils.js"></script>
+  <script src="assets/js/storage.js"></script>
+  <script src="data/buildings.js"></script>
+  <script src="assets/js/components.js"></script>
+
+  <script>
+    function buildingApp() {
+      return {
+        mobileOpen: false,
+        searchQuery: "100 Queen's Road Central, Hong Kong",
+        isAnalyzing: false,
+        hasAnalyzed: true,
+        isSubmitting: false,
+        scanProgress: 0,
+        currentScanStep: "",
+        activeTab: "safety",
+        showLeadModal: false,
+        showMethodology: false,
+        showPdfModal: false,
+        leadFormError: "",
+        pdfFormError: "",
+        reportDate: "",
+        reportRef: "",
+
+        simHeight: 42,
+        simFrequency: 12,
+        viewMode: "photo",
+
+        leadForm: { name: "", email: "", phone: "", role: "Building Owner / Asset Manager", notes: "" },
+        pdfForm: { name: "", email: "" },
+
+        sampleProperties: window.RaspectBuildings,
+
+        activeBuilding: {
+          address: "100 Queen's Road Central, Hong Kong",
+          type: "Commercial High-Rise",
+          yearBuilt: 1988,
+          floors: 45,
+          facadeArea: "28,400",
+          image: "assets/img/hk-tower.svg",
+          googleMapsUrl: "https://maps.google.com/?cid=14995448563435482337",
+          coordinates: "22.2831° N, 114.1557° E",
+          mapRating: 4.2,
+          reviewsCount: 312,
+          safetyScore: 34,
+          serviceabilityScore: 42,
+          sustainabilityScore: 38,
+          peerGroupCount: 128,
+          peerPercentile: 32,
+          financialImpact: { energyWaste: 48500, insuranceSurcharge: 22400, deferredMaintenancePenalty: 185000 },
+          googleComments: window.RaspectBuildings[0].comments
+        },
+
+        kriData: {
+          safety: [
+            { name: "Facade Spalling & Delamination", level: "CRITICAL", icon: "shield-alert", description: "Elevated risk of exterior concrete spalling and tile detachment due to thermal expansion cycles.", affectedArea: "Floors 18 - 36 East", mitigationROI: 4.8 },
+            { name: "Window Seal Deterioration", level: "HIGH", icon: "square-dashed-bottom", description: "Aged EPDM sealants causing high exposure to wind-driven rain penetration during typhoon events.", affectedArea: "Perimeter Facade", mitigationROI: 3.2 },
+            { name: "Structural Anchor Fatigue", level: "MODERATE", icon: "anchor", description: "Early signs of corrosion on secondary steel support brackets along cladding joints.", affectedArea: "Podium Structure", mitigationROI: 2.9 }
+          ],
+          serviceability: [
+            { name: "Moisture & Ingress Risk", level: "HIGH", icon: "droplets", description: "Micro-cracks in exterior sealant allowing water penetration into sub-frame insulation layers.", affectedArea: "Upper 12 Floors", mitigationROI: 5.1 },
+            { name: "Thermal Bridging & Mold", level: "HIGH", icon: "thermometer-snowflake", description: "Degraded thermal breaks in window mullions triggering interior condensation build-up.", affectedArea: "North Facade Line", mitigationROI: 3.5 },
+            { name: "Acoustic Gasket Failure", level: "MODERATE", icon: "volume-2", description: "Failed perimeter gaskets permitting external traffic noise transmission into suites.", affectedArea: "Lower Commercial Levels", mitigationROI: 2.1 }
+          ],
+          sustainability: [
+            { name: "Thermal Leakage & Energy Loss", level: "CRITICAL", icon: "flame", description: "Unmitigated heat gain causing HVAC chillers to consume 22% additional energy in summer.", affectedArea: "Entire Building Envelope", mitigationROI: 6.2 },
+            { name: "Solar Heat Gain Overhead", level: "HIGH", icon: "sun", description: "Outdated reflective glass coating allowing high infrared radiation into interior office space.", affectedArea: "South Facade Wall", mitigationROI: 4.0 },
+            { name: "Carbon Surcharge Exposure", level: "MODERATE", icon: "leaf", description: "Building envelope thermal rating places asset in municipal carbon penalty bracket.", affectedArea: "Energy Certification", mitigationROI: 3.1 }
+          ]
+        },
+
+        /* ---------- computed ---------- */
+        get overallScore() {
+          return Math.round(
+            this.activeBuilding.safetyScore * 0.4 +
+            this.activeBuilding.serviceabilityScore * 0.35 +
+            this.activeBuilding.sustainabilityScore * 0.25
+          );
+        },
+        get currentKriList() { return this.kriData[this.activeTab] || []; },
+        get allKri() {
+          return ["safety", "serviceability", "sustainability"]
+            .flatMap((p) => this.kriData[p].map((k) => ({ ...k, pillar: p })));
+        },
+        get calcTraditionalCost() { return Math.round(this.simHeight * 1450 + (100 / this.simFrequency) * 2000); },
+        get calcDroneCost() { return Math.round(this.simHeight * 520 + (100 / this.simFrequency) * 800); },
+        get calcTraditionalDays() { return Math.round(this.simHeight * 0.45 + 5); },
+        get calcDroneDays() { return Math.round(this.simHeight * 0.1 + 2); },
+
+        /* ---------- lifecycle ---------- */
+        initApp() {
+          RaspectComponents.mount("score");
+          const now = new Date();
+          this.reportDate = RaspectUtils.formatDateTime(now);
+          this.reportRef = "BCS-" + now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0") + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
+          RaspectData.trackEvent("score_tool_view", {});
+          this.$nextTick(() => {
+            lucide.createIcons();
+            this.renderCharts();
+          });
+        },
+
+        /* ---------- analysis ---------- */
+        selectPreset(preset) {
+          this.searchQuery = preset.address;
+          this.runAnalysis();
+        },
+
+        runAnalysis() {
+          if (!this.searchQuery.trim() || this.isAnalyzing) return;
+          RaspectData.trackEvent("score_generate", { query: this.searchQuery });
+          this.isAnalyzing = true;
+          this.scanProgress = 10;
+          this.currentScanStep = "Fetching GIS Address & Satellite Footprint...";
+
+          const steps = [
+            { p: 35, text: "Analyzing Facade Age & Structural Permit History..." },
+            { p: 65, text: "Evaluating Climate Stress & Typhoon Risk Exposure..." },
+            { p: 85, text: "Benchmarking against Inspectica Peer Database..." },
+            { p: 100, text: "Finalizing BuildingConditionScore..." }
+          ];
+          let idx = 0;
+          const interval = setInterval(() => {
+            if (idx < steps.length) {
+              this.scanProgress = steps[idx].p;
+              this.currentScanStep = steps[idx].text;
+              idx++;
+            } else {
+              clearInterval(interval);
+              setTimeout(() => {
+                this.updateBuildingData();
+                this.isAnalyzing = false;
+                this.hasAnalyzed = true;
+                this.$nextTick(() => {
+                  lucide.createIcons();
+                  this.renderCharts();
+                });
+              }, 400);
+            }
+          }, 450);
+        },
+
+        updateBuildingData() {
+          const seed = this.searchQuery.length;
+          const safety = Math.max(25, Math.min(85, ((seed * 7) % 60) + 25));
+          const serviceability = Math.max(30, Math.min(88, ((seed * 9) % 55) + 30));
+          const sustainability = Math.max(28, Math.min(90, ((seed * 5) % 58) + 28));
+
+          const matched = this.sampleProperties.find((p) =>
+            p.address.toLowerCase().includes(this.searchQuery.toLowerCase())
+          ) || this.sampleProperties[seed % this.sampleProperties.length];
+
+          this.activeBuilding = {
+            address: this.searchQuery,
+            type: matched ? matched.type : (seed % 2 === 0 ? "Commercial High-Rise" : "Residential Skyscraper"),
+            yearBuilt: matched ? matched.year : 1980 + (seed % 35),
+            floors: matched ? matched.floors : 25 + (seed % 40),
+            facadeArea: matched ? matched.facadeArea : (15000 + seed * 450).toLocaleString(),
+            image: matched ? matched.image : "assets/img/default-building.svg",
+            googleMapsUrl: matched ? matched.googleMapsUrl : "https://maps.google.com/?q=" + encodeURIComponent(this.searchQuery),
+            coordinates: matched ? matched.coordinates : "—",
+            mapRating: matched ? matched.mapRating : (3.5 + (seed % 15) / 10).toFixed(1),
+            reviewsCount: matched ? matched.reviewsCount : 40 + (seed * 23),
+            googleComments: matched ? matched.comments : [],
+            safetyScore: safety,
+            serviceabilityScore: serviceability,
+            sustainabilityScore: sustainability,
+            peerGroupCount: 95 + (seed % 50),
+            peerPercentile: Math.round((safety + serviceability) / 2.2),
+            financialImpact: {
+              energyWaste: Math.round(30000 + seed * 850),
+              insuranceSurcharge: Math.round(12000 + seed * 420),
+              deferredMaintenancePenalty: Math.round(120000 + seed * 2800)
+            }
+          };
+        },
+
+        /* ---------- lead capture ---------- */
+        openInspectionModal() {
+          this.leadFormError = "";
+          this.showLeadModal = true;
+          this.$nextTick(() => lucide.createIcons());
+        },
+        openPdfModal() {
+          this.pdfFormError = "";
+          this.showPdfModal = true;
+          this.$nextTick(() => lucide.createIcons());
+        },
+
+        async submitLeadForm() {
+          this.leadFormError = "";
+          const f = this.leadForm;
+          if (!f.name.trim()) { this.leadFormError = "Please enter your full name."; return; }
+          if (!RaspectUtils.isValidEmail(f.email)) { this.leadFormError = "Please enter a valid work email."; return; }
+          if (!RaspectUtils.isValidPhone(f.phone)) { this.leadFormError = "Please enter a valid phone number."; return; }
+
+          this.isSubmitting = true;
+          try {
+            await RaspectData.createLead({
+              name: f.name.trim(),
+              email: f.email.trim().toLowerCase(),
+              phone: f.phone.trim(),
+              role: f.role,
+              notes: f.notes.trim(),
+              building: this.activeBuilding.address,
+              score: this.overallScore,
+              source: "Score Tool"
+            });
+            this.showLeadModal = false;
+            RaspectUtils.toast("Inspection Request Received! A RaSpect Building Engineer will contact you within 2 hours.");
+            this.leadForm = { name: "", email: "", phone: "", role: "Building Owner / Asset Manager", notes: "" };
+          } catch (e) {
+            this.leadFormError = "Something went wrong. Please try again.";
+            console.error(e);
+          } finally {
+            this.isSubmitting = false;
+          }
+        },
+
+        async confirmPdfExport() {
+          this.pdfFormError = "";
+          const f = this.pdfForm;
+          if (!f.name.trim()) { this.pdfFormError = "Please enter your full name."; return; }
+          if (!RaspectUtils.isValidEmail(f.email)) { this.pdfFormError = "Please enter a valid work email."; return; }
+
+          this.isSubmitting = true;
+          try {
+            await RaspectData.createLead({
+              name: f.name.trim(),
+              email: f.email.trim().toLowerCase(),
+              phone: "",
+              role: "Report Download",
+              notes: "Requested executive PDF report.",
+              building: this.activeBuilding.address,
+              score: this.overallScore,
+              source: "Score Tool"
+            });
+            this.showPdfModal = false;
+            RaspectUtils.toast("Executive Report generated — use your browser's Save as PDF to download it.");
+            this.$nextTick(() => {
+              setTimeout(() => window.print(), 500);
+            });
+            this.pdfForm = { name: "", email: "" };
+          } catch (e) {
+            this.pdfFormError = "Something went wrong. Please try again.";
+            console.error(e);
+          } finally {
+            this.isSubmitting = false;
+          }
+        },
+
+        /* ---------- helpers ---------- */
+        ordinal(n) { return RaspectUtils.ordinal(n); },
+        formatCurrency(v) { return RaspectUtils.formatCurrency(v); },
+        scoreColorText(s) { return s < 45 ? "text-red-600" : s < 70 ? "text-amber-600" : "text-emerald-600"; },
+        scoreBadgeClass(s) {
+          if (s < 45) return "bg-red-50 text-red-600 border-red-200";
+          if (s < 70) return "bg-amber-50 text-amber-600 border-amber-200";
+          return "bg-emerald-50 text-emerald-600 border-emerald-200";
+        },
+        scoreCategoryText(s) {
+          if (s < 45) return "Elevated Risk / Action Urged";
+          if (s < 70) return "Moderate Risk Zone";
+          return "Low Risk / Well Maintained";
+        },
+        kriLevelBadge(level) {
+          if (level === "CRITICAL") return "bg-red-50 text-red-600 border border-red-200";
+          if (level === "HIGH") return "bg-amber-50 text-amber-600 border border-amber-200";
+          return "bg-blue-50 text-blue-600 border border-blue-200";
+        },
+        kriPillar(kri) {
+          const labels = { safety: "Safety", serviceability: "Serviceability", sustainability: "Sustainability" };
+          return labels[kri.pillar] || kri.pillar;
+        },
+
+        /* ---------- charts ---------- */
+        renderCharts() {
+          this.renderGauge();
+          this.renderPeerChart();
+        },
+
+        renderGauge() {
+          const canvas = document.getElementById("gaugeCanvas");
+          if (!canvas) return;
+          const ctx = canvas.getContext("2d");
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          const score = this.overallScore;
+          const cx = canvas.width / 2, cy = canvas.height / 2, r = 85;
+          const start = 0.75 * Math.PI, end = 2.25 * Math.PI;
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, start, end);
+          ctx.strokeStyle = "#f1f5f9";
+          ctx.lineWidth = 14;
+          ctx.lineCap = "round";
+          ctx.stroke();
+
+          const cur = start + (score / 100) * (end - start);
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, start, cur);
+          ctx.strokeStyle = score >= 70 ? "#059669" : score >= 45 ? "#d97706" : "#dc2626";
+          ctx.lineWidth = 14;
+          ctx.lineCap = "round";
+          ctx.stroke();
+        },
+
+        renderPeerChart() {
+          const canvas = document.getElementById("peerChart");
+          if (!canvas) return;
+          if (window.peerChartInstance) window.peerChartInstance.destroy();
+          const ctx = canvas.getContext("2d");
+          window.peerChartInstance = new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: ["Safety Index", "Serviceability", "Sustainability", "Overall Score"],
+              datasets: [
+                { label: "Your Building", data: [this.activeBuilding.safetyScore, this.activeBuilding.serviceabilityScore, this.activeBuilding.sustainabilityScore, this.overallScore], backgroundColor: "#0d9488", borderRadius: 8 },
+                { label: "District Peers (Top 25%)", data: [78, 82, 80, 80], backgroundColor: "#cbd5e1", borderRadius: 8 }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { labels: { color: "#334155", font: { size: 11, family: "Inter", weight: "600" } } } },
+              scales: {
+                y: { min: 0, max: 100, grid: { color: "rgba(226,232,240,0.8)" }, ticks: { color: "#64748b", font: { size: 10 } } },
+                x: { grid: { display: false }, ticks: { color: "#334155", font: { size: 11, weight: "600" } } }
+              }
+            }
+          });
+        }
+      };
+    }
+  </script>
+</body>
+</html>

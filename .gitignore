@@ -1,0 +1,12 @@
+# Local dev
+serve.ps1
+*.log
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Editor
+.vscode/
+.idea/

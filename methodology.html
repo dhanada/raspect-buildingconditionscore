@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50 text-slate-900">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Methodology | BuildingConditionScore — RaSpect Inspectica™</title>
+
+  <script src="vendor/tailwind.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: { extend: {
+        colors: {
+          brand: { 50: "#f0fdfa", 100: "#ccfbf1", 200: "#99f6e4", 400: "#2dd4bf", 500: "#14b8a6", 600: "#0d9488", 700: "#0f766e", 800: "#115e59", 900: "#134e4a", glow: "rgba(20,184,166,0.25)" },
+          danger: { 50: "#fef2f2", 100: "#fee2e2", 500: "#ef4444", 600: "#dc2626", 700: "#b91c1c" },
+          warning: { 50: "#fffbe1", 100: "#fef3c7", 500: "#f59e0b", 600: "#d97706", 700: "#b45309" },
+          success: { 50: "#ecfdf5", 100: "#d1fae5", 500: "#10b981", 600: "#059669", 700: "#047857" }
+        },
+        fontFamily: { sans: ["Inter", "system-ui", "sans-serif"], mono: ["JetBrains Mono", "monospace"] },
+        boxShadow: { glass: "0 8px 32px 0 rgba(15,23,42,0.06)", "glow-teal": "0 0 25px -5px rgba(20,184,166,0.35)" }
+      } }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script defer src="vendor/alpine.js"></script>
+  <script defer src="vendor/lucide.js"></script>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+
+<body class="h-full bg-slate-50 font-sans antialiased text-slate-900 flex flex-col selection:bg-brand-500 selection:text-white bg-grid-pattern relative"
+      x-data="{ mobileOpen: false }">
+
+  <div id="site-nav"></div>
+
+  <main class="flex-1 w-full relative z-10">
+    <section class="relative overflow-hidden">
+      <div class="absolute -top-40 -right-40 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 relative z-10">
+        <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white border border-brand-200 text-brand-800 text-xs font-semibold shadow-sm mb-5">
+          <i data-lucide="book-open" class="w-3.5 h-3.5 text-brand-500"></i>
+          <span>Analytics Methodology</span>
+        </div>
+        <h1 class="text-4xl sm:text-5xl font-black tracking-tight leading-tight">How the BuildingConditionScore is calculated</h1>
+        <p class="text-slate-600 mt-4 leading-relaxed max-w-2xl">
+          The <strong>BuildingConditionScore</strong> combines multi-layered architectural telemetry, historical weather stress
+          indexes, regional building permit records, and RaSpect's proprietary Inspectica AI vision benchmark database into a
+          single, defensible 0–100 health rating.
+        </p>
+      </div>
+    </section>
+
+    <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 space-y-6">
+      <div class="glass-panel p-7 sm:p-9 rounded-3xl border border-slate-200/90 shadow-sm">
+        <div class="flex items-center space-x-2 text-brand-700 text-xs font-black uppercase tracking-wider mb-3">
+          <i data-lucide="shield" class="w-4 h-4"></i>
+          <span>Index 01 — 40% weight</span>
+        </div>
+        <h2 class="text-2xl font-black text-slate-900 mb-2">Safety Index</h2>
+        <p class="text-slate-600 leading-relaxed text-sm">
+          Evaluates facade failure risk, spalling concrete, window frame degradation, and typhoon wind shear stress based on
+          age, construction type, and local storm zones. Sourced from structural permit records, Inspectica defect benchmarks,
+          and regional climate stress models.
+        </p>
+      </div>
+
+      <div class="glass-panel p-7 sm:p-9 rounded-3xl border border-slate-200/90 shadow-sm">
+        <div class="flex items-center space-x-2 text-brand-700 text-xs font-black uppercase tracking-wider mb-3">
+          <i data-lucide="wrench" class="w-4 h-4"></i>
+          <span>Index 02 — 35% weight</span>
+        </div>
+        <h2 class="text-2xl font-black text-slate-900 mb-2">Serviceability Index</h2>
+        <p class="text-slate-600 leading-relaxed text-sm">
+          Calculates moisture ingress probability, sealant shrinkage, thermal movement impact, and tenant environmental comfort
+          scores — the day-to-day factors that determine whether a building remains fully usable and comfortable.
+        </p>
+      </div>
+
+      <div class="glass-panel p-7 sm:p-9 rounded-3xl border border-slate-200/90 shadow-sm">
+        <div class="flex items-center space-x-2 text-brand-700 text-xs font-black uppercase tracking-wider mb-3">
+          <i data-lucide="leaf" class="w-4 h-4"></i>
+          <span>Index 03 — 25% weight</span>
+        </div>
+        <h2 class="text-2xl font-black text-slate-900 mb-2">Sustainability Index</h2>
+        <p class="text-slate-600 leading-relaxed text-sm">
+          Estimates thermal loss through the facade envelope, HVAC operational overhead penalty, and carbon footprint alignment
+          with municipal green standards — helping you address ESG reporting and energy benchmarks.
+        </p>
+      </div>
+
+      <div class="glass-panel p-7 sm:p-9 rounded-3xl border border-brand-500/30 shadow-sm relative overflow-hidden">
+        <div class="absolute -top-20 -right-20 w-56 h-56 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <h2 class="text-xl font-black text-slate-900 mb-3">Inputs & Data Sources</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div class="flex items-start space-x-2.5 text-slate-600">
+            <i data-lucide="map" class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5"></i>
+            <span>GIS footprint & satellite imagery</span>
+          </div>
+          <div class="flex items-start space-x-2.5 text-slate-600">
+            <i data-lucide="file-text" class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5"></i>
+            <span>Regional building permit & age records</span>
+          </div>
+          <div class="flex items-start space-x-2.5 text-slate-600">
+            <i data-lucide="cloud-rain" class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5"></i>
+            <span>Historical climate / typhoon stress indexes</span>
+          </div>
+          <div class="flex items-start space-x-2.5 text-slate-600">
+            <i data-lucide="database" class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5"></i>
+            <span>Inspectica AI vision benchmark database</span>
+          </div>
+        </div>
+        <div class="mt-6 flex flex-col sm:flex-row gap-3">
+          <a href="score.html" class="btn-cta inline-flex items-center justify-center space-x-2 px-6 py-3 text-sm">
+            <i data-lucide="search" class="w-4 h-4"></i>
+            <span>Score a building now</span>
+          </a>
+          <a href="contact.html" class="px-6 py-3 text-sm font-semibold text-slate-700 hover:text-slate-900 rounded-xl border border-slate-300 bg-white hover:border-brand-300 transition inline-flex items-center justify-center space-x-2 shadow-sm">
+            <i data-lucide="phone" class="w-4 h-4 text-brand-600"></i>
+            <span>Talk to an expert</span>
+          </a>
+        </div>
+      </div>
+
+      <p class="text-[11px] text-slate-400 leading-relaxed px-1">
+        The BuildingConditionScore is a diagnostic estimate for prioritisation and benchmarking. It does not replace statutory
+        inspections or professional structural engineering advice. © 2026 RaSpect Intelligence Ltd.
+      </p>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+  <div id="toast-container"></div>
+
+  <script src="assets/js/utils.js"></script>
+  <script src="assets/js/storage.js"></script>
+  <script src="assets/js/components.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      RaspectComponents.mount("methodology");
+      RaspectData.trackEvent("methodology_view", {});
+    });
+  </script>
+</body>
+</html>

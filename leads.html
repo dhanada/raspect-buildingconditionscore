@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50 text-slate-900">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leads Admin | BuildingConditionScore — RaSpect Inspectica™</title>
+
+  <script src="vendor/tailwind.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: { extend: {
+        colors: {
+          brand: { 50: "#f0fdfa", 100: "#ccfbf1", 200: "#99f6e4", 400: "#2dd4bf", 500: "#14b8a6", 600: "#0d9488", 700: "#0f766e", 800: "#115e59", 900: "#134e4a", glow: "rgba(20,184,166,0.25)" },
+          danger: { 50: "#fef2f2", 100: "#fee2e2", 500: "#ef4444", 600: "#dc2626", 700: "#b91c1c" },
+          warning: { 50: "#fffbe1", 100: "#fef3c7", 500: "#f59e0b", 600: "#d97706", 700: "#b45309" },
+          success: { 50: "#ecfdf5", 100: "#d1fae5", 500: "#10b981", 600: "#059669", 700: "#047857" }
+        },
+        fontFamily: { sans: ["Inter", "system-ui", "sans-serif"], mono: ["JetBrains Mono", "monospace"] },
+        boxShadow: { glass: "0 8px 32px 0 rgba(15,23,42,0.06)", "glow-teal": "0 0 25px -5px rgba(20,184,166,0.35)" }
+      } }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script defer src="vendor/alpine.js"></script>
+  <script defer src="vendor/lucide.js"></script>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+
+<body class="h-full bg-slate-50 font-sans antialiased text-slate-900 flex flex-col selection:bg-brand-500 selection:text-white bg-grid-pattern relative"
+      x-data="adminApp()" x-init="initApp()">
+
+  <div id="site-nav"></div>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 relative z-10">
+
+    <!-- Page header -->
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div>
+        <div class="flex items-center space-x-2 text-brand-700 text-xs font-bold uppercase tracking-wider mb-1">
+          <i data-lucide="database" class="w-4 h-4"></i>
+          <span>Back Office</span>
+        </div>
+        <h1 class="text-3xl font-black tracking-tight text-slate-900">Lead Management</h1>
+        <p class="text-sm text-slate-500 mt-1">Captured from the score tool, landing page, and contact forms — stored locally (swap in your CRM/API later).</p>
+      </div>
+      <div class="flex items-center space-x-3">
+        <button @click="exportCsv()" class="px-4 py-2.5 text-xs font-bold rounded-xl bg-brand-600 hover:bg-brand-700 text-white transition flex items-center space-x-1.5 shadow-md shadow-brand-600/20 active:scale-95">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Export CSV</span>
+        </button>
+        <button @click="confirmClear()" class="px-4 py-2.5 text-xs font-semibold rounded-xl bg-white hover:bg-red-50 text-red-600 border border-red-200 transition flex items-center space-x-1.5 shadow-sm active:scale-95">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+          <span>Clear All</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="glass-panel p-5 rounded-2xl border border-slate-200/90 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Total Leads</span>
+          <i data-lucide="users" class="w-4 h-4 text-brand-600"></i>
+        </div>
+        <div class="text-3xl font-black font-mono mt-2" x-text="stats.total"></div>
+      </div>
+      <div class="glass-panel p-5 rounded-2xl border border-slate-200/90 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] uppercase tracking-wider font-bold text-slate-500">New / Uncontacted</span>
+          <i data-lucide="inbox" class="w-4 h-4 text-amber-500"></i>
+        </div>
+        <div class="text-3xl font-black font-mono mt-2 text-amber-600" x-text="stats.new"></div>
+      </div>
+      <div class="glass-panel p-5 rounded-2xl border border-slate-200/90 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Qualified + Won</span>
+          <i data-lucide="trophy" class="w-4 h-4 text-emerald-600"></i>
+        </div>
+        <div class="text-3xl font-black font-mono mt-2 text-emerald-600" x-text="stats.won"></div>
+      </div>
+      <div class="glass-panel p-5 rounded-2xl border border-slate-200/90 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Avg Building Score</span>
+          <i data-lucide="gauge" class="w-4 h-4 text-brand-600"></i>
+        </div>
+        <div class="text-3xl font-black font-mono mt-2" x-text="stats.avgScore"></div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="glass-panel p-4 rounded-2xl border border-slate-200/90 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between shadow-sm">
+      <div class="relative flex-1 max-w-md">
+        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+        <input type="text" x-model="search" placeholder="Search by name, email, building..." class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-slate-900 focus:border-brand-500 focus:bg-white focus:outline-none transition">
+      </div>
+      <div class="flex items-center space-x-2 text-xs">
+        <button @click="statusFilter = 'All'" :class="statusFilter === 'All' ? 'bg-brand-600 text-white font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-3.5 py-2 rounded-xl font-semibold transition">All</button>
+        <template x-for="s in statuses" :key="s">
+          <button @click="statusFilter = s" :class="statusFilter === s ? 'bg-brand-600 text-white font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-3.5 py-2 rounded-xl font-semibold transition" x-text="s"></button>
+        </template>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="glass-panel rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50/80 border-b border-slate-200/80 text-[10px] uppercase tracking-wider text-slate-500">
+            <tr>
+              <th class="px-4 py-3 font-bold">Received</th>
+              <th class="px-4 py-3 font-bold">Contact</th>
+              <th class="px-4 py-3 font-bold">Role</th>
+              <th class="px-4 py-3 font-bold">Target Building</th>
+              <th class="px-4 py-3 font-bold">Score</th>
+              <th class="px-4 py-3 font-bold">Source</th>
+              <th class="px-4 py-3 font-bold">Status</th>
+              <th class="px-4 py-3 font-bold text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <template x-for="lead in filteredLeads" :key="lead.id">
+              <tr class="hover:bg-slate-50/70 transition">
+                <td class="px-4 py-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                  <div x-text="timeAgo(lead.createdAt)"></div>
+                  <div class="text-slate-400" x-text="shortDate(lead.createdAt)"></div>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="font-bold text-slate-900" x-text="lead.name"></div>
+                  <div class="text-[11px] text-slate-500 font-mono" x-text="lead.email"></div>
+                  <div class="text-[11px] text-slate-500 font-mono" x-text="lead.phone || '—'"></div>
+                </td>
+                <td class="px-4 py-3 text-slate-600" x-text="lead.role"></td>
+                <td class="px-4 py-3">
+                  <div class="font-semibold text-slate-700 max-w-[180px] truncate" x-text="lead.building" :title="lead.building"></div>
+                  <div x-show="lead.notes" class="text-[11px] text-slate-400 italic truncate max-w-[180px]" :title="lead.notes" x-text="'“' + lead.notes + '”'"></div>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-lg font-black font-mono" :class="scoreClass(lead.score)" x-text="lead.score != null ? lead.score : '—'"></span>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 font-semibold text-[10px]" x-text="lead.source"></span>
+                </td>
+                <td class="px-4 py-3">
+                  <select :value="lead.status" @change="changeStatus(lead, $event.target.value)" class="text-[11px] font-bold rounded-lg border border-slate-200 bg-white px-2 py-1.5 focus:border-brand-500 focus:outline-none" :class="statusClass(lead.status)">
+                    <template x-for="s in statuses" :key="s">
+                      <option :value="s" x-text="s"></option>
+                    </template>
+                  </select>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <button @click="removeLead(lead.id)" class="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition" aria-label="Delete lead">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </td>
+              </tr>
+            </template>
+            <tr x-show="!filteredLeads.length" x-cloak>
+              <td colspan="8" class="px-4 py-16 text-center">
+                <i data-lucide="inbox" class="w-10 h-10 text-slate-300 mx-auto mb-3"></i>
+                <div class="text-slate-500 font-semibold">No leads found</div>
+                <p class="text-[11px] text-slate-400 mt-1">Generate scores and submit inspection requests to populate this dashboard.</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Funnel note -->
+    <div class="glass-panel p-5 rounded-2xl border border-slate-200/90 shadow-sm text-xs text-slate-600 flex items-start space-x-3">
+      <i data-lucide="info" class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5"></i>
+      <div>
+        <strong class="text-slate-900">Backend-ready:</strong> this dashboard reads from the <code class="font-mono text-brand-700 bg-brand-50 px-1 rounded">RaspectData</code> repository layer.
+        Point it at your CRM or REST API by replacing the implementation in <code class="font-mono text-brand-700 bg-brand-50 px-1 rounded">assets/js/storage.js</code> — no page changes required.
+        A <strong>CSV export</strong> is included for manual import into Salesforce, HubSpot, or your own pipeline.
+      </div>
+    </div>
+
+  </main>
+
+  <div id="site-footer"></div>
+  <div id="toast-container"></div>
+
+  <script src="assets/js/utils.js"></script>
+  <script src="assets/js/storage.js"></script>
+  <script src="assets/js/components.js"></script>
+
+  <script>
+    function adminApp() {
+      return {
+        mobileOpen: false,
+        leads: [],
+        search: "",
+        statusFilter: "All",
+        statuses: RaspectData.LEAD_STATUSES,
+
+        get filteredLeads() {
+          const q = this.search.trim().toLowerCase();
+          return this.leads.filter((l) => {
+            const matchStatus = this.statusFilter === "All" || l.status === this.statusFilter;
+            const matchSearch = !q ||
+              (l.name || "").toLowerCase().includes(q) ||
+              (l.email || "").toLowerCase().includes(q) ||
+              (l.building || "").toLowerCase().includes(q) ||
+              (l.role || "").toLowerCase().includes(q);
+            return matchStatus && matchSearch;
+          });
+        },
+
+        get stats() {
+          const total = this.leads.length;
+          const fresh = this.leads.filter((l) => l.status === "New").length;
+          const won = this.leads.filter((l) => l.status === "Qualified" || l.status === "Won").length;
+          const withScore = this.leads.filter((l) => l.score != null);
+          const avgScore = withScore.length
+            ? Math.round(withScore.reduce((a, l) => a + l.score, 0) / withScore.length)
+            : "—";
+          return { total, new: fresh, won, avgScore };
+        },
+
+        async initApp() {
+          RaspectComponents.mount("leads");
+          await RaspectData.seedLeadsIfEmpty();
+          this.leads = await RaspectData.listLeads();
+          this.$nextTick(() => lucide.createIcons());
+        },
+
+        async changeStatus(lead, status) {
+          await RaspectData.updateLeadStatus(lead.id, status);
+          lead.status = status;
+          RaspectUtils.toast("Lead marked as " + status);
+        },
+
+        async removeLead(id) {
+          if (!confirm("Delete this lead? This cannot be undone.")) return;
+          await RaspectData.deleteLead(id);
+          this.leads = await RaspectData.listLeads();
+          RaspectUtils.toast("Lead deleted.", "info");
+        },
+
+        async confirmClear() {
+          if (!confirm("Delete ALL leads? This cannot be undone.")) return;
+          await RaspectData.clearLeads();
+          this.leads = await RaspectData.listLeads();
+          RaspectUtils.toast("All leads cleared.", "warning");
+        },
+
+        exportCsv() {
+          if (!this.filteredLeads.length) { RaspectUtils.toast("Nothing to export.", "warning"); return; }
+          const csv = RaspectUtils.toCSV(this.filteredLeads, RaspectData.LEAD_COLUMNS);
+          RaspectUtils.downloadFile(
+            "raspect-leads-" + new Date().toISOString().slice(0, 10) + ".csv",
+            csv,
+            "text/csv"
+          );
+          RaspectUtils.toast("Exported " + this.filteredLeads.length + " leads.");
+        },
+
+        scoreClass(score) {
+          if (score == null) return "bg-slate-100 text-slate-500";
+          if (score < 45) return "bg-red-50 text-red-600";
+          if (score < 70) return "bg-amber-50 text-amber-600";
+          return "bg-emerald-50 text-emerald-600";
+        },
+        statusClass(status) {
+          const map = { New: "text-amber-700", Contacted: "text-blue-700", Qualified: "text-brand-700", Proposal: "text-violet-700", Won: "text-emerald-700", Lost: "text-red-700" };
+          return map[status] || "text-slate-700";
+        },
+        shortDate(iso) {
+          const d = new Date(iso);
+          const p = (n) => String(n).padStart(2, "0");
+          return p(d.getDate()) + "/" + p(d.getMonth() + 1) + "/" + d.getFullYear();
+        },
+        timeAgo(iso) { return RaspectUtils.timeAgo(iso); }
+      };
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="50%" stop-color="#312e81"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <linearGradient id="tower" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="street" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#030712"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#sky)"/>
+  <!-- Sun glow -->
+  <circle cx="600" cy="560" r="180" fill="#f59e0b" opacity="0.18"/>
+  <!-- Distant skyline -->
+  <rect x="80" y="420" width="90" height="300" fill="#0f172a" opacity="0.6"/>
+  <rect x="180" y="350" width="70" height="370" fill="#0f172a" opacity="0.55"/>
+  <rect x="880" y="380" width="80" height="340" fill="#0f172a" opacity="0.55"/>
+  <rect x="980" y="440" width="110" height="280" fill="#0f172a" opacity="0.5"/>
+  <!-- Main skyscraper -->
+  <rect x="460" y="90" width="280" height="630" fill="url(#tower)" rx="3"/>
+  <!-- Setbacks -->
+  <rect x="440" y="520" width="320" height="200" fill="url(#tower)"/>
+  <!-- Windows grid (lit) -->
+  <g fill="#fbbf24">
+    <rect x="475" y="110" width="16" height="20" opacity="0.85"/><rect x="505" y="110" width="16" height="20" opacity="0.5"/><rect x="535" y="110" width="16" height="20" opacity="0.9"/><rect x="565" y="110" width="16" height="20" opacity="0.4"/><rect x="595" y="110" width="16" height="20" opacity="0.75"/><rect x="625" y="110" width="16" height="20" opacity="0.5"/><rect x="655" y="110" width="16" height="20" opacity="0.85"/><rect x="685" y="110" width="16" height="20" opacity="0.6"/>
+    <rect x="475" y="145" width="16" height="20" opacity="0.5"/><rect x="505" y="145" width="16" height="20" opacity="0.85"/><rect x="535" y="145" width="16" height="20" opacity="0.45"/><rect x="565" y="145" width="16" height="20" opacity="0.9"/><rect x="595" y="145" width="16" height="20" opacity="0.6"/><rect x="625" y="145" width="16" height="20" opacity="0.4"/><rect x="655" y="145" width="16" height="20" opacity="0.85"/><rect x="685" y="145" width="16" height="20" opacity="0.5"/>
+    <rect x="475" y="180" width="16" height="20" opacity="0.9"/><rect x="505" y="180" width="16" height="20" opacity="0.5"/><rect x="535" y="180" width="16" height="20" opacity="0.7"/><rect x="565" y="180" width="16" height="20" opacity="0.45"/><rect x="595" y="180" width="16" height="20" opacity="0.85"/><rect x="625" y="180" width="16" height="20" opacity="0.9"/><rect x="655" y="180" width="16" height="20" opacity="0.4"/><rect x="685" y="180" width="16" height="20" opacity="0.75"/>
+    <rect x="475" y="215" width="16" height="20" opacity="0.55"/><rect x="505" y="215" width="16" height="20" opacity="0.9"/><rect x="535" y="215" width="16" height="20" opacity="0.4"/><rect x="565" y="215" width="16" height="20" opacity="0.8"/><rect x="595" y="215" width="16" height="20" opacity="0.5"/><rect x="625" y="215" width="16" height="20" opacity="0.85"/><rect x="655" y="215" width="16" height="20" opacity="0.9"/><rect x="685" y="215" width="16" height="20" opacity="0.45"/>
+    <rect x="475" y="250" width="16" height="20" opacity="0.8"/><rect x="505" y="250" width="16" height="20" opacity="0.45"/><rect x="535" y="250" width="16" height="20" opacity="0.9"/><rect x="565" y="250" width="16" height="20" opacity="0.55"/><rect x="595" y="250" width="16" height="20" opacity="0.85"/><rect x="625" y="250" width="16" height="20" opacity="0.5"/><rect x="655" y="250" width="16" height="20" opacity="0.4"/><rect x="685" y="250" width="16" height="20" opacity="0.9"/>
+    <rect x="475" y="285" width="16" height="20" opacity="0.5"/><rect x="505" y="285" width="16" height="20" opacity="0.8"/><rect x="535" y="285" width="16" height="20" opacity="0.6"/><rect x="565" y="285" width="16" height="20" opacity="0.9"/><rect x="595" y="285" width="16" height="20" opacity="0.45"/><rect x="625" y="285" width="16" height="20" opacity="0.85"/><rect x="655" y="285" width="16" height="20" opacity="0.7"/><rect x="685" y="285" width="16" height="20" opacity="0.5"/>
+    <rect x="475" y="320" width="16" height="20" opacity="0.9"/><rect x="505" y="320" width="16" height="20" opacity="0.55"/><rect x="535" y="320" width="16" height="20" opacity="0.85"/><rect x="565" y="320" width="16" height="20" opacity="0.45"/><rect x="595" y="320" width="16" height="20" opacity="0.75"/><rect x="625" y="320" width="16" height="20" opacity="0.9"/><rect x="655" y="320" width="16" height="20" opacity="0.5"/><rect x="685" y="320" width="16" height="20" opacity="0.8"/>
+    <rect x="475" y="355" width="16" height="20" opacity="0.6"/><rect x="505" y="355" width="16" height="20" opacity="0.9"/><rect x="535" y="355" width="16" height="20" opacity="0.5"/><rect x="565" y="355" width="16" height="20" opacity="0.85"/><rect x="595" y="355" width="16" height="20" opacity="0.4"/><rect x="625" y="355" width="16" height="20" opacity="0.55"/><rect x="655" y="355" width="16" height="20" opacity="0.9"/><rect x="685" y="355" width="16" height="20" opacity="0.7"/>
+    <rect x="475" y="390" width="16" height="20" opacity="0.85"/><rect x="505" y="390" width="16" height="20" opacity="0.45"/><rect x="535" y="390" width="16" height="20" opacity="0.8"/><rect x="565" y="390" width="16" height="20" opacity="0.6"/><rect x="595" y="390" width="16" height="20" opacity="0.9"/><rect x="625" y="390" width="16" height="20" opacity="0.5"/><rect x="655" y="390" width="16" height="20" opacity="0.45"/><rect x="685" y="390" width="16" height="20" opacity="0.85"/>
+  </g>
+  <!-- Antenna -->
+  <rect x="594" y="40" width="12" height="54" fill="#1e293b"/>
+  <circle cx="600" cy="38" r="5" fill="#ef4444" opacity="0.9"/>
+  <!-- Street -->
+  <rect x="0" y="720" width="1200" height="80" fill="url(#street)"/>
+  <line x1="0" y1="732" x2="1200" y2="732" stroke="#374151" stroke-width="2" stroke-dasharray="30 20"/>
+  <!-- Lobby -->
+  <rect x="460" y="650" width="320" height="70" fill="#0f172a"/>
+  <rect x="560" y="660" width="60" height="50" fill="#fbbf24" opacity="0.5"/>
+  <rect x="640" y="660" width="60" height="50" fill="#fbbf24" opacity="0.4"/>
+</svg>

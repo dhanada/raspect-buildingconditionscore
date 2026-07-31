@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#1e3a5f"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f766e"/>
+      <stop offset="100%" stop-color="#2dd4bf"/>
+    </linearGradient>
+    <linearGradient id="street" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#sky)"/>
+  <circle cx="900" cy="160" r="48" fill="#fde047" opacity="0.85"/>
+  <circle cx="900" cy="160" r="72" fill="#fde047" opacity="0.15"/>
+  <rect x="90" y="430" width="120" height="290" fill="#0f172a" opacity="0.5"/>
+  <rect x="220" y="370" width="90" height="350" fill="#0f172a" opacity="0.45"/>
+  <rect x="980" y="390" width="130" height="330" fill="#0f172a" opacity="0.5"/>
+  <!-- Main tower -->
+  <rect x="440" y="140" width="320" height="580" fill="url(#glass)" rx="3"/>
+  <g stroke="#083344" stroke-width="2.5" opacity="0.5">
+    <line x1="470" y1="140" x2="470" y2="720"/>
+    <line x1="500" y1="140" x2="500" y2="720"/>
+    <line x1="530" y1="140" x2="530" y2="720"/>
+    <line x1="560" y1="140" x2="560" y2="720"/>
+    <line x1="590" y1="140" x2="590" y2="720"/>
+    <line x1="620" y1="140" x2="620" y2="720"/>
+    <line x1="650" y1="140" x2="650" y2="720"/>
+    <line x1="680" y1="140" x2="680" y2="720"/>
+    <line x1="710" y1="140" x2="710" y2="720"/>
+  </g>
+  <g stroke="#083344" stroke-width="2" opacity="0.45">
+    <line x1="440" y1="175" x2="760" y2="175"/>
+    <line x1="440" y1="210" x2="760" y2="210"/>
+    <line x1="440" y1="245" x2="760" y2="245"/>
+    <line x1="440" y1="280" x2="760" y2="280"/>
+    <line x1="440" y1="315" x2="760" y2="315"/>
+    <line x1="440" y1="350" x2="760" y2="350"/>
+    <line x1="440" y1="385" x2="760" y2="385"/>
+    <line x1="440" y1="420" x2="760" y2="420"/>
+    <line x1="440" y1="455" x2="760" y2="455"/>
+    <line x1="440" y1="490" x2="760" y2="490"/>
+    <line x1="440" y1="525" x2="760" y2="525"/>
+    <line x1="440" y1="560" x2="760" y2="560"/>
+    <line x1="440" y1="595" x2="760" y2="595"/>
+    <line x1="440" y1="630" x2="760" y2="630"/>
+    <line x1="440" y1="665" x2="760" y2="665"/>
+  </g>
+  <polygon points="460,140 520,140 460,300" fill="#ffffff" opacity="0.12"/>
+  <polygon points="620,140 680,140 620,520" fill="#ffffff" opacity="0.08"/>
+  <rect x="440" y="640" width="320" height="80" fill="#0f766e"/>
+  <rect x="455" y="655" width="70" height="55" fill="#67e8f9" opacity="0.35"/>
+  <rect x="540" y="655" width="70" height="55" fill="#67e8f9" opacity="0.35"/>
+  <rect x="625" y="655" width="70" height="55" fill="#67e8f9" opacity="0.35"/>
+  <rect x="700" y="655" width="50" height="55" fill="#67e8f9" opacity="0.35"/>
+  <rect x="0" y="720" width="1200" height="80" fill="url(#street)"/>
+  <line x1="0" y1="732" x2="1200" y2="732" stroke="#334155" stroke-width="2" stroke-dasharray="30 20"/>
+</svg>

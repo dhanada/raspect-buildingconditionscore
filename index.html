@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50 text-slate-900">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BuildingConditionScore | RaSpect Inspectica™ Intelligence</title>
+  <meta name="description" content="Enter any building address to get an instant AI-powered BuildingConditionScore. Diagnose facade safety hazards, spalling liabilities, and energy loss against peer benchmarks. Powered by RaSpect Inspectica™.">
+
+  <!-- Vendored dependencies (self-contained, no CDN warnings) -->
+  <script src="vendor/tailwind.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: { extend: {
+        colors: {
+          brand: { 50: "#f0fdfa", 100: "#ccfbf1", 200: "#99f6e4", 400: "#2dd4bf", 500: "#14b8a6", 600: "#0d9488", 700: "#0f766e", 800: "#115e59", 900: "#134e4a", glow: "rgba(20,184,166,0.25)" },
+          danger: { 50: "#fef2f2", 100: "#fee2e2", 500: "#ef4444", 600: "#dc2626", 700: "#b91c1c" },
+          warning: { 50: "#fffbe1", 100: "#fef3c7", 500: "#f59e0b", 600: "#d97706", 700: "#b45309" },
+          success: { 50: "#ecfdf5", 100: "#d1fae5", 500: "#10b981", 600: "#059669", 700: "#047857" }
+        },
+        fontFamily: { sans: ["Inter", "system-ui", "sans-serif"], mono: ["JetBrains Mono", "monospace"] },
+        boxShadow: {
+          glass: "0 8px 32px 0 rgba(15,23,42,0.06)",
+          "glow-teal": "0 0 25px -5px rgba(20,184,166,0.35)",
+          "card-hover": "0 20px 30px -10px rgba(15,23,42,0.08)"
+        }
+      } }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script defer src="vendor/alpine.js"></script>
+  <script defer src="vendor/lucide.js"></script>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+
+<body class="h-full bg-slate-50 font-sans antialiased text-slate-900 flex flex-col selection:bg-brand-500 selection:text-white bg-grid-pattern relative"
+      x-data="{ mobileOpen: false }">
+
+  <!-- Mounted shared nav -->
+  <div id="site-nav"></div>
+
+  <main class="flex-1 w-full relative z-10">
+
+    <!-- ============ HERO ============ -->
+    <section class="relative overflow-hidden">
+      <div class="absolute -top-40 -right-40 w-[36rem] h-[36rem] bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-40 -left-40 w-[36rem] h-[36rem] bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-16 sm:pb-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
+        <!-- Copy -->
+        <div class="lg:col-span-7 space-y-7">
+          <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white border border-brand-200 text-brand-800 text-xs font-semibold shadow-sm">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-500"></i>
+            <span>Inspectica™ Computer Vision & Geospatial Facade Diagnostics</span>
+          </div>
+
+          <h1 class="text-4xl sm:text-6xl font-black tracking-tight text-slate-900 leading-[1.05]">
+            Know the real condition of every building — <span class="bg-gradient-to-r from-brand-600 via-teal-600 to-brand-500 bg-clip-text text-transparent">in seconds.</span>
+          </h1>
+
+          <p class="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
+            <strong>BuildingConditionScore</strong> by RaSpect Inspectica™ turns any address into a diagnostic-grade
+            risk profile. Uncover facade safety hazards, spalling liabilities, and energy loss — benchmarked against
+            your district peers.
+          </p>
+
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+            <a href="score.html" class="btn-cta px-8 py-4 text-sm flex items-center justify-center space-x-2">
+              <i data-lucide="search" class="w-4 h-4"></i>
+              <span>Get Your Free Building Score</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </a>
+            <a href="methodology.html" class="px-6 py-4 text-sm font-semibold text-slate-700 hover:text-slate-900 rounded-xl border border-slate-300 bg-white hover:border-brand-300 transition flex items-center justify-center space-x-2 shadow-sm">
+              <i data-lucide="book-open" class="w-4 h-4 text-brand-600"></i>
+              <span>How the score works</span>
+            </a>
+          </div>
+
+          <!-- Trust bar -->
+          <div class="grid grid-cols-3 gap-4 max-w-md pt-2">
+            <div class="p-4 rounded-2xl bg-white/70 border border-slate-200/80 text-center shadow-sm">
+              <div class="text-2xl font-black font-mono text-slate-900">4,200+</div>
+              <div class="text-[11px] text-slate-500 font-semibold mt-1">Facades Scanned</div>
+            </div>
+            <div class="p-4 rounded-2xl bg-white/70 border border-slate-200/80 text-center shadow-sm">
+              <div class="text-2xl font-black font-mono text-brand-700">99.4%</div>
+              <div class="text-[11px] text-slate-500 font-semibold mt-1">Defect Accuracy</div>
+            </div>
+            <div class="p-4 rounded-2xl bg-white/70 border border-slate-200/80 text-center shadow-sm">
+              <div class="text-2xl font-black font-mono text-slate-900">$18.4M+</div>
+              <div class="text-[11px] text-slate-500 font-semibold mt-1">Risk Prevented</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual: score card mock -->
+        <div class="lg:col-span-5 reveal">
+          <div class="glass-panel rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-glass relative overflow-hidden">
+            <div class="absolute -top-16 -right-16 w-48 h-48 bg-brand-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Composite Health Rating</span>
+                <h3 class="text-lg font-black text-slate-900">BuildingConditionScore</h3>
+              </div>
+              <span class="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wide bg-red-50 text-red-600 border border-red-200">Elevated Risk</span>
+            </div>
+
+            <div class="my-8 flex flex-col items-center">
+              <div class="w-40 h-40 rounded-full bg-[conic-gradient(#dc2626_0deg,#dc2626_137deg,#f1f5f9_137deg)] flex items-center justify-center shadow-inner">
+                <div class="w-28 h-28 rounded-full bg-white flex flex-col items-center justify-center">
+                  <span class="text-4xl font-black font-mono text-slate-900">38</span>
+                  <span class="text-[10px] text-slate-500 uppercase font-semibold">out of 100</span>
+                </div>
+              </div>
+              <p class="text-xs text-center text-slate-600 max-w-xs mt-4 leading-relaxed">
+                Low score = elevated risk of facade spalling, window seal leaks, and unmitigated thermal loss.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2.5 border-t border-slate-200/80 pt-4">
+              <div class="p-3 rounded-xl bg-white border border-slate-200/80 text-center">
+                <span class="text-[10px] text-slate-500 uppercase block font-bold">Safety</span>
+                <span class="text-lg font-black font-mono text-red-600">34/100</span>
+              </div>
+              <div class="p-3 rounded-xl bg-white border border-slate-200/80 text-center">
+                <span class="text-[10px] text-slate-500 uppercase block font-bold">Serviceability</span>
+                <span class="text-lg font-black font-mono text-amber-600">42/100</span>
+              </div>
+              <div class="p-3 rounded-xl bg-white border border-slate-200/80 text-center">
+                <span class="text-[10px] text-slate-500 uppercase block font-bold">Sustainability</span>
+                <span class="text-lg font-black font-mono text-amber-600">38/100</span>
+              </div>
+            </div>
+
+            <div class="mt-5 p-3 rounded-xl bg-red-50/70 border border-red-200 text-xs text-slate-700 flex items-center space-x-2">
+              <i data-lucide="trending-down" class="w-4 h-4 text-red-600 flex-shrink-0"></i>
+              <span>Estimated annual value leakage: <strong class="text-red-700">$185,000</strong> if unmitigated.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CLIENT LOGOS ============ -->
+    <section class="border-y border-slate-200/80 bg-white/70">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <p class="text-center text-[11px] uppercase tracking-widest font-bold text-slate-400 mb-6">Trusted by leading asset owners, FM teams & regulators</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 items-center text-slate-400">
+          <div class="flex items-center justify-center space-x-2 font-black text-sm"><i data-lucide="tram-front" class="w-5 h-5"></i><span>MTR</span></div>
+          <div class="flex items-center justify-center space-x-2 font-black text-sm"><i data-lucide="building-2" class="w-5 h-5"></i><span>SHKP</span></div>
+          <div class="flex items-center justify-center space-x-2 font-black text-sm"><i data-lucide="landmark" class="w-5 h-5"></i><span>Swire</span></div>
+          <div class="flex items-center justify-center space-x-2 font-black text-sm"><i data-lucide="home" class="w-5 h-5"></i><span>Housing Society</span></div>
+          <div class="flex items-center justify-center space-x-2 font-black text-sm"><i data-lucide="shield" class="w-5 h-5"></i><span>Buildings Dept</span></div>
+          <div class="flex items-center justify-center space-x-2 font-black text-sm"><i data-lucide="landmark" class="w-5 h-5"></i><span>ICC</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="py-16 sm:py-24">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-2xl mx-auto text-center space-y-4 reveal">
+          <span class="text-xs font-bold text-brand-700 uppercase tracking-wider">How it works</span>
+          <h2 class="text-3xl sm:text-4xl font-black tracking-tight">From address to asset insight in three steps</h2>
+          <p class="text-slate-600">A diagnostic-grade condition score, powered by RaSpect's computer-vision benchmark database and geospatial risk intelligence.</p>
+        </div>
+
+        <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="glass-panel glass-panel-interactive p-7 rounded-3xl border border-slate-200/90 shadow-sm">
+            <div class="w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 flex items-center justify-center mb-4">
+              <i data-lucide="map-pin" class="w-6 h-6"></i>
+            </div>
+            <span class="text-[11px] font-black text-brand-500 font-mono">STEP 01</span>
+            <h3 class="text-lg font-bold text-slate-900 mt-1">Enter any address</h3>
+            <p class="text-sm text-slate-600 mt-2 leading-relaxed">Search any commercial or high-rise address. Our engine pulls GIS footprint, structural age, and climate stress data automatically.</p>
+          </div>
+          <div class="glass-panel glass-panel-interactive p-7 rounded-3xl border border-slate-200/90 shadow-sm">
+            <div class="w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 flex items-center justify-center mb-4">
+              <i data-lucide="brain-circuit" class="w-6 h-6"></i>
+            </div>
+            <span class="text-[11px] font-black text-brand-500 font-mono">STEP 02</span>
+            <h3 class="text-lg font-bold text-slate-900 mt-1">AI scores the envelope</h3>
+            <p class="text-sm text-slate-600 mt-2 leading-relaxed">The Inspectica™ model assesses safety, serviceability, and sustainability — detecting cracks, spalling, and thermal leaks.</p>
+          </div>
+          <div class="glass-panel glass-panel-interactive p-7 rounded-3xl border border-slate-200/90 shadow-sm">
+            <div class="w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 flex items-center justify-center mb-4">
+              <i data-lucide="gauge" class="w-6 h-6"></i>
+            </div>
+            <span class="text-[11px] font-black text-brand-500 font-mono">STEP 03</span>
+            <h3 class="text-lg font-bold text-slate-900 mt-1">Get your score & plan</h3>
+            <p class="text-sm text-slate-600 mt-2 leading-relaxed">See your BuildingConditionScore, financial exposure, and peer rank — then book a precision drone scan to verify.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FEATURES ============ -->
+    <section class="py-16 sm:py-24 bg-white/60 border-y border-slate-200/80">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-2xl mx-auto text-center space-y-4 reveal">
+          <span class="text-xs font-bold text-brand-700 uppercase tracking-wider">Product features</span>
+          <h2 class="text-3xl sm:text-4xl font-black tracking-tight">Diagnostics your insurance and maintenance budgets wish you had</h2>
+        </div>
+
+        <div class="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="glass-panel glass-panel-interactive p-6 rounded-3xl border border-slate-200/90 shadow-sm">
+            <div class="w-11 h-11 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 flex items-center justify-center mb-3"><i data-lucide="scan" class="w-5 h-5"></i></div>
+            <h3 class="font-bold text-slate-900">AI Defect Detection</h3>
+            <p class="text-sm text-slate-600 mt-1.5 leading-relaxed">Automatically identify cracks, spalling, and delamination at 99.4% accuracy from drone imagery.</p>
+          </div>
+          <div class="glass-panel glass-panel-interactive p-6 rounded-3xl border border-slate-200/90 shadow-sm">
+            <div class="w-11 h-11 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 flex items-center justify-center mb-3"><i data-lucide="dollar-sign" class="w-5 h-5"></i></div>
+            <h3 class="font-bold text-slate-900">Financial Risk Modeling</h3>
+            <p class="text-sm text-slate-600 mt-1.5 leading-relaxed">Quantify energy waste, insurance surcharges, and deferred maintenance penalties in dollars.</p>
+          </div>
+          <div class="glass-panel glass-panel-interactive p-6 rounded-3xl border border-slate-200/90 shadow-sm">
+            <div class="w-11 h-11 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 flex items-center justify-center mb-3"><i data-lucide="bar-chart-3" class="w-5 h-5"></i></div>
+            <h3 class="font-bold text-slate-900">Peer Benchmarking</h3>
+            <p class="text-sm text-slate-600 mt-1.5 leading-relaxed">Compare against similar high-rise assets in your district with percentile ranking.</p>
+          </div>
+          <div class="glass-panel glass-panel-interactive p-6 rounded-3xl border border-slate-200/90 shadow-sm">
+            <div class="w-11 h-11 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 flex items-center justify-center mb-3"><i data-lucide="scan" class="w-5 h-5"></i></div>
+            <h3 class="font-bold text-slate-900">Drone Precision Scans</h3>
+            <p class="text-sm text-slate-600 mt-1.5 leading-relaxed">Book an autonomous drone inspection — zero scaffolding, zero human risk, millimeter accuracy.</p>
+          </div>
+          <div class="glass-panel glass-panel-interactive p-6 rounded-3xl border border-slate-200/90 shadow-sm">
+            <div class="w-11 h-11 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 flex items-center justify-center mb-3"><i data-lucide="file-text" class="w-5 h-5"></i></div>
+            <h3 class="font-bold text-slate-900">Executive Reports</h3>
+            <p class="text-sm text-slate-600 mt-1.5 leading-relaxed">Auto-generate professional inspection reports with detailed defect information and priority actions.</p>
+          </div>
+          <div class="glass-panel glass-panel-interactive p-6 rounded-3xl border border-slate-200/90 shadow-sm">
+            <div class="w-11 h-11 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 flex items-center justify-center mb-3"><i data-lucide="leaf" class="w-5 h-5"></i></div>
+            <h3 class="font-bold text-slate-900">ESG Metrics</h3>
+            <p class="text-sm text-slate-600 mt-1.5 leading-relaxed">Align with environmental, social, and governance reporting — a differentiator for green-certified portfolios.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ROI COMPARISON ============ -->
+    <section class="py-16 sm:py-24">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="glass-panel p-6 sm:p-10 rounded-3xl border border-brand-500/30 relative overflow-hidden shadow-sm">
+          <div class="absolute -top-24 -right-24 w-72 h-72 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center relative z-10">
+            <div class="space-y-5">
+              <span class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold">
+                <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+                <span>Inspectica™ AI Drone vs. Manual Scaffolding</span>
+              </span>
+              <h2 class="text-3xl sm:text-4xl font-black tracking-tight">Why traditional inspections leave you exposed</h2>
+              <p class="text-slate-600 leading-relaxed">
+                Manual rope access and scaffolding miss up to <strong class="text-amber-600">60% of elevated micro-defects</strong>,
+                while incurring heavy downtime, labor risk, and tenant disturbance. RaSpect delivers
+                <strong class="text-brand-700">50%+ cost reduction</strong> and <strong class="text-brand-700">10x faster</strong> turnarounds.
+              </p>
+              <a href="score.html" class="btn-cta inline-flex items-center space-x-2 px-7 py-3.5 text-sm">
+                <span>Try the simulator</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </a>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="p-5 rounded-2xl bg-red-50/70 border border-red-200 shadow-sm">
+                <div class="flex items-center justify-between border-b border-red-200/80 pb-2 mb-3">
+                  <span class="text-xs font-bold text-red-700 uppercase">Traditional</span>
+                  <i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i>
+                </div>
+                <div class="space-y-1.5 font-mono text-xs">
+                  <div class="flex justify-between text-slate-600"><span>Est. Cost</span><span class="text-slate-900 font-bold">$103,000</span></div>
+                  <div class="flex justify-between text-slate-600"><span>Duration</span><span class="text-slate-900 font-bold">32 days</span></div>
+                  <div class="flex justify-between text-slate-600"><span>Defect Accuracy</span><span class="text-red-600 font-bold">~42%</span></div>
+                  <div class="flex justify-between text-slate-600"><span>Human Risk</span><span class="text-red-600 font-bold">HIGH</span></div>
+                </div>
+              </div>
+              <div class="p-5 rounded-2xl bg-brand-50/80 border border-brand-300 shadow-sm relative">
+                <span class="absolute top-0 right-0 px-2.5 py-0.5 bg-brand-600 text-white text-[9px] font-black uppercase rounded-bl-lg">Recommended</span>
+                <div class="flex items-center justify-between border-b border-brand-200/80 pb-2 mb-3">
+                  <span class="text-xs font-bold text-brand-800 uppercase">Inspectica™ AI</span>
+                  <i data-lucide="check-circle-2" class="w-4 h-4 text-brand-600"></i>
+                </div>
+                <div class="space-y-1.5 font-mono text-xs">
+                  <div class="flex justify-between text-slate-600"><span>Est. Cost</span><span class="text-brand-700 font-bold">$38,000</span></div>
+                  <div class="flex justify-between text-slate-600"><span>Duration</span><span class="text-brand-700 font-bold">8 hours</span></div>
+                  <div class="flex justify-between text-slate-600"><span>Defect Accuracy</span><span class="text-brand-700 font-bold">99.4%</span></div>
+                  <div class="flex justify-between text-slate-600"><span>Human Risk</span><span class="text-brand-700 font-bold">ZERO</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TESTIMONIALS ============ -->
+    <section class="py-16 sm:py-24 bg-white/60 border-y border-slate-200/80">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-2xl mx-auto text-center space-y-4 reveal">
+          <span class="text-xs font-bold text-brand-700 uppercase tracking-wider">Customer outcomes</span>
+          <h2 class="text-3xl sm:text-4xl font-black tracking-tight">Real results from real asset owners</h2>
+        </div>
+        <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <figure class="glass-panel p-6 rounded-3xl border border-slate-200/90 shadow-sm">
+            <div class="flex text-amber-500 text-sm mb-3">★★★★★</div>
+            <blockquote class="text-sm text-slate-600 leading-relaxed">"Drone technology lets us inspect high-rise buildings without manpower and scaffolding. It improves safety and minimizes disruption for residents and tenants."</blockquote>
+            <figcaption class="mt-4 flex items-center space-x-3">
+              <div class="w-9 h-9 rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-xs">SB</div>
+              <div>
+                <div class="text-xs font-bold text-slate-900">Simon Baxter</div>
+                <div class="text-[11px] text-slate-500">Managing Director, Great Eagle Holdings</div>
+              </div>
+            </figcaption>
+          </figure>
+          <figure class="glass-panel p-6 rounded-3xl border border-slate-200/90 shadow-sm">
+            <div class="flex text-amber-500 text-sm mb-3">★★★★★</div>
+            <blockquote class="text-sm text-slate-600 leading-relaxed">"With RaSpect's AI-powered solution, the monetary and time cost for a full facade inspection of our commercial building was reduced by at least 50%."</blockquote>
+            <figcaption class="mt-4 flex items-center space-x-3">
+              <div class="w-9 h-9 rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-xs">KL</div>
+              <div>
+                <div class="text-xs font-bold text-slate-900">K. Lam</div>
+                <div class="text-[11px] text-slate-500">Head of Asset Management, Commercial Portfolio</div>
+              </div>
+            </figcaption>
+          </figure>
+          <figure class="glass-panel p-6 rounded-3xl border border-slate-200/90 shadow-sm">
+            <div class="flex text-amber-500 text-sm mb-3">★★★★★</div>
+            <blockquote class="text-sm text-slate-600 leading-relaxed">"Data were post-processed by location and delivered within days. Standardization and data compliance give our team confidence across the entire portfolio."</blockquote>
+            <figcaption class="mt-4 flex items-center space-x-3">
+              <div class="w-9 h-9 rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-xs">JW</div>
+              <div>
+                <div class="text-xs font-bold text-slate-900">J. Wong</div>
+                <div class="text-[11px] text-slate-500">Residential Facilities Director</div>
+              </div>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FINAL CTA ============ -->
+    <section class="py-16 sm:py-24">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="glass-panel p-8 sm:p-14 rounded-3xl border border-brand-500/40 text-center relative overflow-hidden shadow-glass">
+          <div class="absolute -top-32 left-1/2 -translate-x-1/2 w-[30rem] h-[30rem] bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="relative z-10 space-y-6">
+            <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-brand-700 via-brand-600 to-teal-400 p-0.5">
+              <div class="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
+                <i data-lucide="shield-check" class="w-7 h-7 text-brand-600"></i>
+              </div>
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-black tracking-tight">Turn hidden risk into asset protection</h2>
+            <p class="text-slate-600 max-w-xl mx-auto leading-relaxed">
+              Get your building's score today — free. Then book an expert-led Inspectica™ drone scan to validate it with millimeter precision.
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a href="score.html" class="btn-cta px-8 py-4 text-sm inline-flex items-center space-x-2">
+                <i data-lucide="search" class="w-4 h-4"></i>
+                <span>Generate Your Score</span>
+              </a>
+              <a href="contact.html" class="px-7 py-4 text-sm font-semibold text-slate-700 hover:text-slate-900 rounded-xl border border-slate-300 bg-white hover:border-brand-300 transition inline-flex items-center space-x-2 shadow-sm">
+                <i data-lucide="phone" class="w-4 h-4 text-brand-600"></i>
+                <span>Talk to an expert</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Mounted shared footer -->
+  <div id="site-footer"></div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <script src="assets/js/utils.js"></script>
+  <script src="assets/js/storage.js"></script>
+  <script src="assets/js/components.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      RaspectComponents.mount("home");
+
+      // Track landing page view (funnel analytics)
+      RaspectData.trackEvent("landing_view", { page: "index" });
+
+      // Reveal-on-scroll animation
+      const io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add("revealed"); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.15 });
+      document.querySelectorAll(".reveal").forEach(function (el) { io.observe(el); });
+    });
+  </script>
+</body>
+</html>
