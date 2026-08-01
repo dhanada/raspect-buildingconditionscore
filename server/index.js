@@ -22,8 +22,9 @@ const DB_PATH = path.resolve(__dirname, process.env.SQLITE_PATH || "./data/raspe
 const app = express();
 app.use(express.json({ limit: "1mb" }));
 
-// CORS — allow the configured frontend origin(s)
-const origins = (process.env.CORS_ORIGINS || "http://localhost:8099")
+// CORS — allow the configured frontend origin(s).
+// Defaults cover local dev + the GitHub Pages deployment; override via CORS_ORIGINS.
+const origins = (process.env.CORS_ORIGINS || "http://localhost:8099,http://localhost:5500,https://dhanada.github.io")
   .split(",").map((s) => s.trim()).filter(Boolean);
 app.use(cors({ origin: origins, methods: ["GET", "POST", "PATCH", "DELETE"], credentials: false }));
 

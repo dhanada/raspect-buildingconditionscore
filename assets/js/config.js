@@ -11,5 +11,5 @@
 window.APP_CONFIG = {
   apiBase: (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
     ? "http://localhost:4000/api"
-    : "https://raspect-buildingconditionscore-api.up.railway.app/api"
+    : "https://raspect-buildingconditionscore-api-production.up.railway.app/api"
 };
