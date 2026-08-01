@@ -1,0 +1,20 @@
+# Keep the Docker build context small and clean
+node_modules
+server/node_modules
+server/data
+server/.env
+.git
+.github
+vendor
+assets
+index.html
+score.html
+leads.html
+methodology.html
+contact.html
+data
+*.md
+serve.ps1
+.gitignore
+railway.toml
+render.yaml
