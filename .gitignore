@@ -2,6 +2,11 @@
 serve.ps1
 *.log
 
+# Node backend
+server/node_modules/
+server/data/
+server/.env
+
 # OS
 Thumbs.db
 .DS_Store

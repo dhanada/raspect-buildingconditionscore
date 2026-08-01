@@ -44,9 +44,10 @@
         </div>
         <h1 class="text-4xl sm:text-5xl font-black tracking-tight leading-tight">How the BuildingConditionScore is calculated</h1>
         <p class="text-slate-600 mt-4 leading-relaxed max-w-2xl">
-          The <strong>BuildingConditionScore</strong> combines multi-layered architectural telemetry, historical weather stress
-          indexes, regional building permit records, and RaSpect's proprietary Inspectica AI vision benchmark database into a
-          single, defensible 0–100 health rating.
+          The <strong>BuildingConditionScore</strong> is a transparent, desk-based remote assessment built from
+          <strong>real public data</strong> — OpenStreetMap building attributes, live geocoding, and Open-Meteo climate
+          records — combined into a single, auditable 0–100 health rating. Every penalty is itemised, and data gaps are
+          reported honestly (unknown fields add a small uncertainty penalty rather than a guess).
         </p>
       </div>
     </section>
@@ -91,25 +92,29 @@
 
       <div class="glass-panel p-7 sm:p-9 rounded-3xl border border-brand-500/30 shadow-sm relative overflow-hidden">
         <div class="absolute -top-20 -right-20 w-56 h-56 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <h2 class="text-xl font-black text-slate-900 mb-3">Inputs & Data Sources</h2>
+        <h2 class="text-xl font-black text-slate-900 mb-3">Real Data Sources</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div class="flex items-start space-x-2.5 text-slate-600">
-            <i data-lucide="map" class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5"></i>
-            <span>GIS footprint & satellite imagery</span>
+            <i data-lucide="map-pin" class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5"></i>
+            <span><strong>Nominatim</strong> (OSM) — address geocoding</span>
           </div>
           <div class="flex items-start space-x-2.5 text-slate-600">
-            <i data-lucide="file-text" class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5"></i>
-            <span>Regional building permit & age records</span>
+            <i data-lucide="building-2" class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5"></i>
+            <span><strong>Overpass</strong> (OSM) — footprints, height, levels, materials, age</span>
           </div>
           <div class="flex items-start space-x-2.5 text-slate-600">
             <i data-lucide="cloud-rain" class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5"></i>
-            <span>Historical climate / typhoon stress indexes</span>
+            <span><strong>Open-Meteo</strong> — 12-month wind, temperature & precipitation</span>
           </div>
           <div class="flex items-start space-x-2.5 text-slate-600">
-            <i data-lucide="database" class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5"></i>
-            <span>Inspectica AI vision benchmark database</span>
+            <i data-lucide="map" class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5"></i>
+            <span><strong>OpenStreetMap tiles</strong> — interactive footprint map (Leaflet)</span>
           </div>
         </div>
+        <p class="text-xs text-slate-500 mt-4 leading-relaxed">
+          All sources are free and keyless. Where OpenStreetMap has no record for a field (e.g. construction year),
+          the engine reports the gap in "data completeness" and applies a modest uncertainty penalty — it never fabricates values.
+        </p>
         <div class="mt-6 flex flex-col sm:flex-row gap-3">
           <a href="score.html" class="btn-cta inline-flex items-center justify-center space-x-2 px-6 py-3 text-sm">
             <i data-lucide="search" class="w-4 h-4"></i>

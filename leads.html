@@ -44,7 +44,7 @@
           <span>Back Office</span>
         </div>
         <h1 class="text-3xl font-black tracking-tight text-slate-900">Lead Management</h1>
-        <p class="text-sm text-slate-500 mt-1">Captured from the score tool, landing page, and contact forms — stored locally (swap in your CRM/API later).</p>
+        <p class="text-sm text-slate-500 mt-1">Captured from the score tool, landing page, and contact forms — persisted to the backend (SQLite) with a local fallback when offline.</p>
       </div>
       <div class="flex items-center space-x-3">
         <button @click="exportCsv()" class="px-4 py-2.5 text-xs font-bold rounded-xl bg-brand-600 hover:bg-brand-700 text-white transition flex items-center space-x-1.5 shadow-md shadow-brand-600/20 active:scale-95">
@@ -173,9 +173,10 @@
     <div class="glass-panel p-5 rounded-2xl border border-slate-200/90 shadow-sm text-xs text-slate-600 flex items-start space-x-3">
       <i data-lucide="info" class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5"></i>
       <div>
-        <strong class="text-slate-900">Backend-ready:</strong> this dashboard reads from the <code class="font-mono text-brand-700 bg-brand-50 px-1 rounded">RaspectData</code> repository layer.
-        Point it at your CRM or REST API by replacing the implementation in <code class="font-mono text-brand-700 bg-brand-50 px-1 rounded">assets/js/storage.js</code> — no page changes required.
-        A <strong>CSV export</strong> is included for manual import into Salesforce, HubSpot, or your own pipeline.
+        <strong class="text-slate-900">Live backend:</strong> this dashboard reads & writes to the
+        <code class="font-mono text-brand-700 bg-brand-50 px-1 rounded">RaspectData</code> API
+        (<code class="font-mono text-brand-700 bg-brand-50 px-1 rounded" x-text="window.APP_CONFIG ? window.APP_CONFIG.apiBase : ''"></code>).
+        If the backend is unreachable it falls back to local storage. Use <strong>CSV export</strong> to move leads into Salesforce, HubSpot, or your own pipeline.
       </div>
     </div>
 
@@ -187,6 +188,7 @@
   <script src="assets/js/utils.js"></script>
   <script src="assets/js/storage.js"></script>
   <script src="assets/js/components.js"></script>
+  <script src="assets/js/config.js"></script>
 
   <script>
     function adminApp() {
@@ -196,6 +198,7 @@
         search: "",
         statusFilter: "All",
         statuses: RaspectData.LEAD_STATUSES,
+        usingBackend: false,
 
         get filteredLeads() {
           const q = this.search.trim().toLowerCase();
@@ -223,28 +226,64 @@
 
         async initApp() {
           RaspectComponents.mount("leads");
-          await RaspectData.seedLeadsIfEmpty();
-          this.leads = await RaspectData.listLeads();
+          await this.loadLeads();
           this.$nextTick(() => lucide.createIcons());
         },
 
+        async loadLeads() {
+          const api = window.APP_CONFIG.apiBase;
+          try {
+            const res = await fetch(api + "/leads");
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            this.leads = await res.json();
+            this.usingBackend = true;
+          } catch (e) {
+            // Offline fallback to local storage
+            this.usingBackend = false;
+            await RaspectData.seedLeadsIfEmpty();
+            this.leads = await RaspectData.listLeads();
+          }
+        },
+
         async changeStatus(lead, status) {
-          await RaspectData.updateLeadStatus(lead.id, status);
           lead.status = status;
+          try {
+            const api = window.APP_CONFIG.apiBase;
+            const res = await fetch(api + "/leads/" + lead.id, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status })
+            });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+          } catch (e) {
+            await RaspectData.updateLeadStatus(lead.id, status);
+          }
           RaspectUtils.toast("Lead marked as " + status);
         },
 
         async removeLead(id) {
           if (!confirm("Delete this lead? This cannot be undone.")) return;
-          await RaspectData.deleteLead(id);
-          this.leads = await RaspectData.listLeads();
+          try {
+            const api = window.APP_CONFIG.apiBase;
+            const res = await fetch(api + "/leads/" + id, { method: "DELETE" });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+          } catch (e) {
+            await RaspectData.deleteLead(id);
+          }
+          this.leads = this.leads.filter((l) => l.id !== id);
           RaspectUtils.toast("Lead deleted.", "info");
         },
 
         async confirmClear() {
           if (!confirm("Delete ALL leads? This cannot be undone.")) return;
-          await RaspectData.clearLeads();
-          this.leads = await RaspectData.listLeads();
+          try {
+            const api = window.APP_CONFIG.apiBase;
+            const res = await fetch(api + "/leads", { method: "DELETE" });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+          } catch (e) {
+            await RaspectData.clearLeads();
+          }
+          this.leads = [];
           RaspectUtils.toast("All leads cleared.", "warning");
         },
 

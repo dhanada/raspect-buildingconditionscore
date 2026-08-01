@@ -32,7 +32,10 @@
   <script defer src="vendor/alpine.js"></script>
   <script defer src="vendor/lucide.js"></script>
   <script src="vendor/chart.js"></script>
+  <script src="vendor/leaflet.js"></script>
+  <link rel="stylesheet" href="vendor/leaflet.css">
   <link rel="stylesheet" href="assets/css/styles.css">
+  <script src="assets/js/config.js"></script>
 </head>
 
 <body class="h-full bg-slate-50 font-sans antialiased text-slate-900 flex flex-col selection:bg-brand-500 selection:text-white bg-grid-pattern relative"
@@ -92,6 +95,15 @@
       </div>
     </section>
 
+    <!-- Demo-mode notice -->
+    <div x-show="demoMode && hasRunAnalysis" x-cloak x-transition class="flex items-center space-x-3 p-4 rounded-2xl border border-amber-300 bg-amber-50/90 text-amber-800 text-xs shadow-sm">
+      <i data-lucide="plug-zap" class="w-5 h-5 flex-shrink-0 text-amber-600"></i>
+      <div>
+        <strong>Demo mode.</strong> The live backend is unreachable, so sample data is shown.
+        <span class="font-mono" x-text="window.APP_CONFIG ? window.APP_CONFIG.apiBase : ''"></span>
+      </div>
+    </div>
+
     <!-- ============ LOADING ============ -->
     <section x-show="isAnalyzing" x-cloak x-transition:enter="transition ease-out duration-300" class="rounded-3xl glass-panel p-8 sm:p-12 text-center border border-brand-500/40 relative overflow-hidden shadow-xl">
       <div class="absolute inset-0 scan-line pointer-events-none"></div>
@@ -142,8 +154,10 @@
               <span>Floors: <strong class="text-slate-900" x-text="activeBuilding.floors"></strong></span>
               <span>•</span>
               <span>Facade Area: <strong class="text-slate-900" x-text="activeBuilding.facadeArea + ' m²'"></strong></span>
+              <span x-show="activeBuilding.height">•</span>
+              <span x-show="activeBuilding.height">Height: <strong class="text-slate-900" x-text="activeBuilding.height + ' m'"></strong></span>
               <span>•</span>
-              <span>Google Rating: <strong class="text-amber-600" x-text="activeBuilding.mapRating + ' ★ (' + activeBuilding.reviewsCount + ' reviews)'"></strong></span>
+              <span>Data: <strong class="text-brand-700" x-text="!hasRunAnalysis ? 'Sample' : (demoMode ? 'Demo' : 'Live (OSM + Open-Meteo)')"></strong></span>
             </div>
           </div>
         </div>
@@ -164,41 +178,50 @@
         <div class="lg:col-span-7 glass-panel rounded-3xl border border-slate-200/90 overflow-hidden shadow-sm flex flex-col justify-between">
           <div class="p-4 sm:p-5 border-b border-slate-200/80 flex items-center justify-between flex-wrap gap-2 bg-slate-50/50">
             <div class="flex items-center space-x-2">
-              <i data-lucide="camera" class="w-4 h-4 text-brand-600"></i>
-              <h3 class="font-bold text-sm text-slate-900">Facade Scan Telemetry & Street View</h3>
+              <i data-lucide="map" class="w-4 h-4 text-brand-600"></i>
+              <h3 class="font-bold text-sm text-slate-900">Facade & Footprint Intelligence</h3>
             </div>
             <div class="flex bg-slate-200 p-1 rounded-xl text-[11px] font-bold" role="tablist" aria-label="View mode">
-              <button @click="viewMode = 'photo'" :class="viewMode === 'photo' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'" class="px-3 py-1 rounded-lg transition" role="tab">Visual View</button>
-              <button @click="viewMode = 'thermal'" :class="viewMode === 'thermal' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'" class="px-3 py-1 rounded-lg transition flex items-center space-x-1" role="tab">
-                <i data-lucide="flame" class="w-3 h-3"></i>
-                <span>AI Thermal Defect Overlay</span>
+              <button @click="switchViewMode('map')" :class="viewMode === 'map' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'" class="px-3 py-1 rounded-lg transition" role="tab">
+                <i data-lucide="map" class="w-3 h-3"></i>
+                <span>Footprint Map</span>
+              </button>
+              <button @click="switchViewMode('stylized')" :class="viewMode === 'stylized' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'" class="px-3 py-1 rounded-lg transition flex items-center space-x-1" role="tab">
+                <i data-lucide="building-2" class="w-3 h-3"></i>
+                <span>Stylized View</span>
               </button>
             </div>
           </div>
 
           <div class="relative h-72 sm:h-80 bg-slate-900 overflow-hidden group">
-            <img :src="activeBuilding.image" :alt="activeBuilding.address" class="w-full h-full object-cover transition-all duration-500" :class="viewMode === 'thermal' ? 'filter saturate-200 contrast-200 brightness-75 hue-rotate-180 opacity-90' : 'group-hover:scale-105'">
-            <div x-show="viewMode === 'thermal'" class="absolute inset-0 bg-grid-pattern opacity-40 pointer-events-none"></div>
+            <!-- Real footprint map (Leaflet + OSM tiles) -->
+            <div x-show="viewMode === 'map'" id="footprint-map" class="absolute inset-0 z-0" aria-label="Building footprint map"></div>
 
-            <div class="absolute top-1/4 left-1/3 group/pin cursor-pointer">
-              <div class="w-5 h-5 rounded-full bg-red-500/80 border-2 border-white animate-ping absolute inset-0"></div>
-              <div class="w-5 h-5 rounded-full bg-red-600 border-2 border-white relative z-10 flex items-center justify-center text-white text-[9px] font-bold">!</div>
-              <div class="absolute left-6 top-0 w-48 p-2.5 rounded-xl bg-slate-900/95 text-white text-[10px] space-y-1 opacity-0 group-hover/pin:opacity-100 transition-opacity z-20 pointer-events-none shadow-xl border border-red-500/50">
-                <span class="font-bold text-red-400 block">Defect Tag: Concrete Spalling</span>
-                <p class="text-slate-300">Exterior cladding micro-fracture detected on Floor 22 East elevation.</p>
+            <!-- Stylized building illustration -->
+            <img x-show="viewMode === 'stylized'" :src="activeBuilding.image" :alt="activeBuilding.address" class="w-full h-full object-cover transition-all duration-500 group-hover:scale-105">
+
+            <template x-if="viewMode === 'stylized'">
+              <div>
+                <div class="absolute top-1/4 left-1/3 group/pin cursor-pointer">
+                  <div class="w-5 h-5 rounded-full bg-red-500/80 border-2 border-white animate-ping absolute inset-0"></div>
+                  <div class="w-5 h-5 rounded-full bg-red-600 border-2 border-white relative z-10 flex items-center justify-center text-white text-[9px] font-bold">!</div>
+                  <div class="absolute left-6 top-0 w-48 p-2.5 rounded-xl bg-slate-900/95 text-white text-[10px] space-y-1 opacity-0 group-hover/pin:opacity-100 transition-opacity z-20 pointer-events-none shadow-xl border border-red-500/50">
+                    <span class="font-bold text-red-400 block">Defect Tag: Concrete Spalling</span>
+                    <p class="text-slate-300">Exterior cladding micro-fracture detected on Floor 22 East elevation.</p>
+                  </div>
+                </div>
+                <div class="absolute bottom-1/3 right-1/4 group/pin cursor-pointer">
+                  <div class="w-5 h-5 rounded-full bg-amber-500/80 border-2 border-white animate-ping absolute inset-0"></div>
+                  <div class="w-5 h-5 rounded-full bg-amber-600 border-2 border-white relative z-10 flex items-center justify-center text-white text-[9px] font-bold">!</div>
+                  <div class="absolute right-6 top-0 w-48 p-2.5 rounded-xl bg-slate-900/95 text-white text-[10px] space-y-1 opacity-0 group-hover/pin:opacity-100 transition-opacity z-20 pointer-events-none shadow-xl border border-amber-500/50">
+                    <span class="font-bold text-amber-400 block">Defect Tag: Thermal Leakage</span>
+                    <p class="text-slate-300">EPDM window seal shrinkage causing HVAC loss.</p>
+                  </div>
+                </div>
               </div>
-            </div>
+            </template>
 
-            <div class="absolute bottom-1/3 right-1/4 group/pin cursor-pointer">
-              <div class="w-5 h-5 rounded-full bg-amber-500/80 border-2 border-white animate-ping absolute inset-0"></div>
-              <div class="w-5 h-5 rounded-full bg-amber-600 border-2 border-white relative z-10 flex items-center justify-center text-white text-[9px] font-bold">!</div>
-              <div class="absolute right-6 top-0 w-48 p-2.5 rounded-xl bg-slate-900/95 text-white text-[10px] space-y-1 opacity-0 group-hover/pin:opacity-100 transition-opacity z-20 pointer-events-none shadow-xl border border-amber-500/50">
-                <span class="font-bold text-amber-400 block">Defect Tag: Thermal Leakage</span>
-                <p class="text-slate-300">EPDM window seal shrinkage causing HVAC loss.</p>
-              </div>
-            </div>
-
-            <div class="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md text-white px-3 py-1.5 rounded-xl text-xs flex items-center space-x-2 border border-white/20">
+            <div class="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md text-white px-3 py-1.5 rounded-xl text-xs flex items-center space-x-2 border border-white/20 z-10">
               <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-400"></i>
               <span class="font-mono text-[11px]" x-text="activeBuilding.address"></span>
             </div>
@@ -218,43 +241,95 @@
             <div class="flex items-center justify-between border-b border-slate-200/80 pb-3 mb-4">
               <div>
                 <div class="flex items-center space-x-2">
-                  <i data-lucide="message-square-quote" class="w-5 h-5 text-brand-600"></i>
-                  <h3 class="font-bold text-base text-slate-900">Google Maps Occupant Insights</h3>
+                  <i data-lucide="database" class="w-5 h-5 text-brand-600"></i>
+                  <h3 class="font-bold text-base text-slate-900">Building Data Intelligence</h3>
                 </div>
-                <p class="text-xs text-slate-500 mt-0.5">Sourced public comments on building condition & safety</p>
+                <p class="text-xs text-slate-500 mt-0.5">Real public data · OpenStreetMap · Open-Meteo</p>
               </div>
-              <span class="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold flex items-center space-x-1">
-                <span>★</span>
-                <span x-text="activeBuilding.mapRating"></span>
+              <span class="px-2.5 py-1 rounded-lg text-xs font-bold flex items-center space-x-1 border"
+                    :class="activeBuilding.dataCompleteness >= 70 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'">
+                <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+                <span x-text="activeBuilding.dataCompleteness + '% complete'"></span>
               </span>
             </div>
-            <div class="space-y-3 max-h-72 overflow-y-auto pr-1">
-              <template x-for="comment in activeBuilding.googleComments" :key="comment.author">
-                <div class="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-2 hover:border-brand-300 transition">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                      <div class="w-7 h-7 rounded-full bg-brand-100 text-brand-700 font-bold text-xs flex items-center justify-center font-mono" x-text="comment.author.substring(0,1)"></div>
-                      <div>
-                        <h4 class="font-bold text-xs text-slate-900" x-text="comment.author"></h4>
-                        <span class="text-[10px] text-slate-400 block" x-text="comment.date + ' • Google Maps Local Guide'"></span>
-                      </div>
-                    </div>
-                    <div class="text-amber-500 text-xs font-bold" x-text="'★'.repeat(comment.rating)"></div>
-                  </div>
-                  <p class="text-xs text-slate-600 italic leading-relaxed" x-text="'“' + comment.text + '”'"></p>
-                  <div class="flex items-center justify-between text-[10px] pt-1">
-                    <span class="px-2 py-0.5 rounded bg-slate-100 font-mono font-semibold text-slate-600" x-text="'Topic: ' + comment.topic"></span>
-                    <span class="text-slate-400 font-mono" x-text="comment.helpful + ' people found helpful'"></span>
-                  </div>
+
+            <!-- Data completeness bar -->
+            <div class="mb-4">
+              <div class="flex justify-between text-[10px] font-mono text-slate-500 mb-1">
+                <span>Data completeness</span>
+                <span x-text="activeBuilding.dataCompleteness + '%'"></span>
+              </div>
+              <div class="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
+                <div class="bg-gradient-to-r from-brand-600 to-teal-400 h-2 rounded-full transition-all duration-700" :style="'width:' + activeBuilding.dataCompleteness + '%'"></div>
+              </div>
+            </div>
+
+            <!-- Real building attributes -->
+            <div class="grid grid-cols-2 gap-2.5 mb-4">
+              <div class="p-3 rounded-xl bg-white border border-slate-200/80">
+                <span class="text-[10px] text-slate-500 uppercase block font-bold">Building Type</span>
+                <span class="text-sm font-black font-mono text-slate-900" x-text="activeBuilding.data.buildingType || '—'"></span>
+              </div>
+              <div class="p-3 rounded-xl bg-white border border-slate-200/80">
+                <span class="text-[10px] text-slate-500 uppercase block font-bold">Height</span>
+                <span class="text-sm font-black font-mono text-slate-900" x-text="activeBuilding.data.height ? activeBuilding.data.height + ' m' : '—'"></span>
+              </div>
+              <div class="p-3 rounded-xl bg-white border border-slate-200/80">
+                <span class="text-[10px] text-slate-500 uppercase block font-bold">Levels</span>
+                <span class="text-sm font-black font-mono text-slate-900" x-text="activeBuilding.data.levels || '—'"></span>
+              </div>
+              <div class="p-3 rounded-xl bg-white border border-slate-200/80">
+                <span class="text-[10px] text-slate-500 uppercase block font-bold">Year Built</span>
+                <span class="text-sm font-black font-mono text-slate-900" x-text="activeBuilding.data.age != null ? activeBuilding.data.age + ' yrs' : 'Unknown'"></span>
+              </div>
+              <div class="p-3 rounded-xl bg-white border border-slate-200/80">
+                <span class="text-[10px] text-slate-500 uppercase block font-bold">Envelope Material</span>
+                <span class="text-sm font-black font-mono text-slate-900" x-text="activeBuilding.data.buildingMaterial || activeBuilding.data.roofMaterial || '—'"></span>
+              </div>
+              <div class="p-3 rounded-xl bg-white border border-slate-200/80">
+                <span class="text-[10px] text-slate-500 uppercase block font-bold">Footprint</span>
+                <span class="text-sm font-black font-mono text-slate-900" x-text="activeBuilding.data.footprintAreaM2 ? activeBuilding.data.footprintAreaM2.toLocaleString() + ' m²' : '—'"></span>
+              </div>
+            </div>
+
+            <!-- Climate exposure -->
+            <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 mb-4">
+              <div class="flex items-center space-x-2 text-slate-500 text-[10px] font-black uppercase tracking-wider mb-2">
+                <i data-lucide="cloud-sun" class="w-4 h-4 text-brand-600"></i>
+                <span>Climate Exposure (past 12 months)</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-center font-mono">
+                <div class="p-2 rounded-xl bg-white border border-slate-200">
+                  <div class="text-lg font-black" :class="activeBuilding.data.maxGustKmh > 120 ? 'text-red-600' : 'text-slate-900'" x-text="activeBuilding.data.maxGustKmh + ' km/h'"></div>
+                  <div class="text-[9px] text-slate-500 uppercase font-bold">Max Gust</div>
+                </div>
+                <div class="p-2 rounded-xl bg-white border border-slate-200">
+                  <div class="text-lg font-black" :class="activeBuilding.data.annualPrecipMm > 1100 ? 'text-amber-600' : 'text-slate-900'" x-text="activeBuilding.data.annualPrecipMm + ' mm'"></div>
+                  <div class="text-[9px] text-slate-500 uppercase font-bold">Rain / yr</div>
+                </div>
+                <div class="p-2 rounded-xl bg-white border border-slate-200">
+                  <div class="text-lg font-black" :class="activeBuilding.data.maxTempC > 38 ? 'text-amber-600' : 'text-slate-900'" x-text="activeBuilding.data.maxTempC + '°C'"></div>
+                  <div class="text-[9px] text-slate-500 uppercase font-bold">Max Temp</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Risk flags -->
+            <div class="space-y-2">
+              <template x-for="flag in activeBuilding.flags" :key="flag">
+                <div class="flex items-start space-x-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                  <i data-lucide="alert-triangle" class="w-3.5 h-3.5 flex-shrink-0 mt-0.5"></i>
+                  <span x-text="flag"></span>
                 </div>
               </template>
             </div>
           </div>
+
           <div class="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs text-slate-500">
-            <span class="text-[11px]">Real-time NLP sentiment analysis applied</span>
-            <a :href="activeBuilding.googleMapsUrl" target="_blank" rel="noopener" class="text-brand-700 font-bold hover:underline flex items-center space-x-1">
-              <span>View All on Google Maps</span>
-              <i data-lucide="external-link" class="w-3 h-3"></i>
+            <span class="text-[11px]">Desk-based remote assessment</span>
+            <a href="methodology.html" class="text-brand-700 font-bold hover:underline flex items-center space-x-1">
+              <span>How we score it</span>
+              <i data-lucide="arrow-right" class="w-3 h-3"></i>
             </a>
           </div>
         </div>
@@ -726,10 +801,15 @@
         pdfFormError: "",
         reportDate: "",
         reportRef: "",
+        demoMode: false,
+        hasRunAnalysis: false,
+        analysisId: null,
+        kris: [],
 
         simHeight: 42,
         simFrequency: 12,
-        viewMode: "photo",
+        viewMode: "stylized",
+        mapInstance: null,
 
         leadForm: { name: "", email: "", phone: "", role: "Building Owner / Asset Manager", notes: "" },
         pdfForm: { name: "", email: "" },
@@ -742,35 +822,42 @@
           yearBuilt: 1988,
           floors: 45,
           facadeArea: "28,400",
+          height: 158,
           image: "assets/img/hk-tower.svg",
-          googleMapsUrl: "https://maps.google.com/?cid=14995448563435482337",
-          coordinates: "22.2831° N, 114.1557° E",
-          mapRating: 4.2,
-          reviewsCount: 312,
+          googleMapsUrl: "https://www.openstreetmap.org/?mlat=22.2831&mlon=114.1550#map=18/22.2831/114.1550",
+          coordinates: "22.2831° N, 114.1550° E",
+          lat: 22.2831, lon: 114.1550,
+          footprint: null,
           safetyScore: 34,
           serviceabilityScore: 42,
           sustainabilityScore: 38,
-          peerGroupCount: 128,
+          peerGroupCount: 250,
           peerPercentile: 32,
           financialImpact: { energyWaste: 48500, insuranceSurcharge: 22400, deferredMaintenancePenalty: 185000 },
-          googleComments: window.RaspectBuildings[0].comments
+          dataCompleteness: 62,
+          flags: ["Demo data — connect the backend for live building intelligence."],
+          data: {
+            buildingType: "commercial", height: 158, levels: 45, age: 38,
+            buildingMaterial: "glass", roofMaterial: null,
+            footprintAreaM2: 189, maxGustKmh: 150, annualPrecipMm: 2607, maxTempC: 35.6
+          }
         },
 
         kriData: {
           safety: [
-            { name: "Facade Spalling & Delamination", level: "CRITICAL", icon: "shield-alert", description: "Elevated risk of exterior concrete spalling and tile detachment due to thermal expansion cycles.", affectedArea: "Floors 18 - 36 East", mitigationROI: 4.8 },
-            { name: "Window Seal Deterioration", level: "HIGH", icon: "square-dashed-bottom", description: "Aged EPDM sealants causing high exposure to wind-driven rain penetration during typhoon events.", affectedArea: "Perimeter Facade", mitigationROI: 3.2 },
-            { name: "Structural Anchor Fatigue", level: "MODERATE", icon: "anchor", description: "Early signs of corrosion on secondary steel support brackets along cladding joints.", affectedArea: "Podium Structure", mitigationROI: 2.9 }
+            { name: "Facade Spalling & Delamination", pillar: "safety", level: "CRITICAL", icon: "shield-alert", description: "Elevated risk of exterior concrete spalling and tile detachment due to thermal expansion cycles.", affectedArea: "Floors 18 - 36 East", roi: 4.8 },
+            { name: "Window Seal Deterioration", pillar: "safety", level: "HIGH", icon: "square-dashed-bottom", description: "Aged EPDM sealants causing high exposure to wind-driven rain penetration during typhoon events.", affectedArea: "Perimeter Facade", roi: 3.2 },
+            { name: "Structural Anchor Fatigue", pillar: "safety", level: "MODERATE", icon: "anchor", description: "Early signs of corrosion on secondary steel support brackets along cladding joints.", affectedArea: "Podium Structure", roi: 2.9 }
           ],
           serviceability: [
-            { name: "Moisture & Ingress Risk", level: "HIGH", icon: "droplets", description: "Micro-cracks in exterior sealant allowing water penetration into sub-frame insulation layers.", affectedArea: "Upper 12 Floors", mitigationROI: 5.1 },
-            { name: "Thermal Bridging & Mold", level: "HIGH", icon: "thermometer-snowflake", description: "Degraded thermal breaks in window mullions triggering interior condensation build-up.", affectedArea: "North Facade Line", mitigationROI: 3.5 },
-            { name: "Acoustic Gasket Failure", level: "MODERATE", icon: "volume-2", description: "Failed perimeter gaskets permitting external traffic noise transmission into suites.", affectedArea: "Lower Commercial Levels", mitigationROI: 2.1 }
+            { name: "Moisture & Ingress Risk", pillar: "serviceability", level: "HIGH", icon: "droplets", description: "Micro-cracks in exterior sealant allowing water penetration into sub-frame insulation layers.", affectedArea: "Upper 12 Floors", roi: 5.1 },
+            { name: "Thermal Bridging & Mold", pillar: "serviceability", level: "HIGH", icon: "thermometer-snowflake", description: "Degraded thermal breaks in window mullions triggering interior condensation build-up.", affectedArea: "North Facade Line", roi: 3.5 },
+            { name: "Acoustic Gasket Failure", pillar: "serviceability", level: "MODERATE", icon: "volume-2", description: "Failed perimeter gaskets permitting external traffic noise transmission into suites.", affectedArea: "Lower Commercial Levels", roi: 2.1 }
           ],
           sustainability: [
-            { name: "Thermal Leakage & Energy Loss", level: "CRITICAL", icon: "flame", description: "Unmitigated heat gain causing HVAC chillers to consume 22% additional energy in summer.", affectedArea: "Entire Building Envelope", mitigationROI: 6.2 },
-            { name: "Solar Heat Gain Overhead", level: "HIGH", icon: "sun", description: "Outdated reflective glass coating allowing high infrared radiation into interior office space.", affectedArea: "South Facade Wall", mitigationROI: 4.0 },
-            { name: "Carbon Surcharge Exposure", level: "MODERATE", icon: "leaf", description: "Building envelope thermal rating places asset in municipal carbon penalty bracket.", affectedArea: "Energy Certification", mitigationROI: 3.1 }
+            { name: "Thermal Leakage & Energy Loss", pillar: "sustainability", level: "CRITICAL", icon: "flame", description: "Unmitigated heat gain causing HVAC chillers to consume 22% additional energy in summer.", affectedArea: "Entire Building Envelope", roi: 6.2 },
+            { name: "Solar Heat Gain Overhead", pillar: "sustainability", level: "HIGH", icon: "sun", description: "Outdated reflective glass coating allowing high infrared radiation into interior office space.", affectedArea: "South Facade Wall", roi: 4.0 },
+            { name: "Carbon Surcharge Exposure", pillar: "sustainability", level: "MODERATE", icon: "leaf", description: "Building envelope thermal rating places asset in municipal carbon penalty bracket.", affectedArea: "Energy Certification", roi: 3.1 }
           ]
         },
 
@@ -782,10 +869,20 @@
             this.activeBuilding.sustainabilityScore * 0.25
           );
         },
-        get currentKriList() { return this.kriData[this.activeTab] || []; },
+        get currentKriList() {
+          if (this.kris && this.kris.length) {
+            return this.kris
+              .filter((k) => (k.pillar || "safety") === this.activeTab)
+              .map((k) => ({ ...k, mitigationROI: k.roi }));
+          }
+          return (this.kriData[this.activeTab] || []).map((k) => ({ ...k, mitigationROI: k.roi }));
+        },
         get allKri() {
-          return ["safety", "serviceability", "sustainability"]
-            .flatMap((p) => this.kriData[p].map((k) => ({ ...k, pillar: p })));
+          if (this.kris && this.kris.length) {
+            return this.kris.map((k) => ({ ...k, mitigationROI: k.roi }));
+          }
+          return Object.keys(this.kriData).flatMap((p) => this.kriData[p])
+            .map((k) => ({ ...k, mitigationROI: k.roi }));
         },
         get calcTraditionalCost() { return Math.round(this.simHeight * 1450 + (100 / this.simFrequency) * 2000); },
         get calcDroneCost() { return Math.round(this.simHeight * 520 + (100 / this.simFrequency) * 800); },
@@ -814,38 +911,122 @@
         runAnalysis() {
           if (!this.searchQuery.trim() || this.isAnalyzing) return;
           RaspectData.trackEvent("score_generate", { query: this.searchQuery });
+
           this.isAnalyzing = true;
           this.scanProgress = 10;
-          this.currentScanStep = "Fetching GIS Address & Satellite Footprint...";
+          this.currentScanStep = "Resolving address & geocoding...";
 
           const steps = [
-            { p: 35, text: "Analyzing Facade Age & Structural Permit History..." },
-            { p: 65, text: "Evaluating Climate Stress & Typhoon Risk Exposure..." },
-            { p: 85, text: "Benchmarking against Inspectica Peer Database..." },
-            { p: 100, text: "Finalizing BuildingConditionScore..." }
+            { p: 35, text: "Fetching building footprint from OpenStreetMap..." },
+            { p: 65, text: "Pulling climate stress from Open-Meteo..." },
+            { p: 85, text: "Computing BuildingConditionScore..." },
+            { p: 100, text: "Finalizing risk indicators & benchmarks..." }
           ];
-          let idx = 0;
-          const interval = setInterval(() => {
-            if (idx < steps.length) {
-              this.scanProgress = steps[idx].p;
-              this.currentScanStep = steps[idx].text;
-              idx++;
-            } else {
-              clearInterval(interval);
-              setTimeout(() => {
-                this.updateBuildingData();
-                this.isAnalyzing = false;
-                this.hasAnalyzed = true;
-                this.$nextTick(() => {
-                  lucide.createIcons();
-                  this.renderCharts();
-                });
-              }, 400);
+
+          const animateSteps = () => new Promise((resolve) => {
+            let idx = 0;
+            const interval = setInterval(() => {
+              if (idx < steps.length) {
+                this.scanProgress = steps[idx].p;
+                this.currentScanStep = steps[idx].text;
+                idx++;
+              } else {
+                clearInterval(interval);
+                resolve();
+              }
+            }, 420);
+          });
+
+          const fetchScore = async () => {
+            const res = await fetch(window.APP_CONFIG.apiBase + "/score", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ address: this.searchQuery })
+            });
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              throw new Error(errData.error || ("HTTP " + res.status));
             }
-          }, 450);
+            return res.json();
+          };
+
+          Promise.all([fetchScore(), animateSteps()])
+            .then(([data]) => {
+              this.applyRealData(data);
+              this.demoMode = false;
+              RaspectUtils.toast("Live score generated from real data", "success");
+            })
+            .catch((err) => {
+              console.warn("Backend unavailable, falling back to demo:", err.message);
+              this.applyDemoData();
+              this.demoMode = true;
+              RaspectUtils.toast("Backend offline — showing demo data", "warning");
+            })
+            .finally(() => {
+              this.isAnalyzing = false;
+              this.hasAnalyzed = true;
+              this.hasRunAnalysis = true;
+              this.$nextTick(() => {
+                lucide.createIcons();
+                this.renderCharts();
+                this.renderMap();
+              });
+            });
         },
 
-        updateBuildingData() {
+        /* Map a live API analysis into the dashboard state. */
+        applyRealData(analysis) {
+          const b = analysis.building || {};
+          const s = analysis.score || {};
+          const coords = analysis.coordinates || { lat: 0, lon: 0 };
+          const year = s.inputs && s.inputs.age != null
+            ? new Date().getFullYear() - s.inputs.age
+            : null;
+          const floors = (s.inputs && s.inputs.levels) || b.buildingLevels || null;
+          const footprintArea = (s.inputs && s.inputs.footprintAreaM2) || b.footprintAreaM2 || null;
+          const height = (s.inputs && s.inputs.height) || b.buildingHeight || null;
+
+          this.activeBuilding = {
+            address: analysis.resolvedAddress || this.searchQuery,
+            type: b.building ? b.building : "Building",
+            yearBuilt: year || "Unknown",
+            floors: floors || "—",
+            facadeArea: footprintArea ? footprintArea.toLocaleString() : "—",
+            height: height,
+            image: "assets/img/default-building.svg",
+            googleMapsUrl: "https://www.openstreetmap.org/?mlat=" + coords.lat + "&mlon=" + coords.lon + "#map=18/" + coords.lat + "/" + coords.lon,
+            coordinates: (coords.lat && coords.lon)
+              ? coords.lat.toFixed(4) + "°, " + coords.lon.toFixed(4) + "°"
+              : "—",
+            lat: coords.lat, lon: coords.lon,
+            footprint: b.footprint || null,
+            safetyScore: s.subScores ? s.subScores.safety : 50,
+            serviceabilityScore: s.subScores ? s.subScores.serviceability : 50,
+            sustainabilityScore: s.subScores ? s.subScores.sustainability : 50,
+            peerGroupCount: 250,
+            peerPercentile: RaspectUtils.clamp ? RaspectUtils.clamp(105 - s.overall, 2, 98) : Math.max(2, Math.min(98, 105 - s.overall)),
+            financialImpact: s.financial || { energyWaste: 0, insuranceSurcharge: 0, deferredMaintenancePenalty: 0 },
+            dataCompleteness: s.dataCompleteness || 50,
+            flags: s.flags || [],
+            data: {
+              buildingType: (s.inputs && s.inputs.buildingType) || b.building,
+              height: height,
+              levels: floors,
+              age: s.inputs ? s.inputs.age : null,
+              buildingMaterial: (s.inputs && s.inputs.buildingMaterial) || b.buildingMaterial,
+              roofMaterial: (s.inputs && s.inputs.roofMaterial) || b.roofMaterial,
+              footprintAreaM2: footprintArea,
+              maxGustKmh: s.inputs ? s.inputs.maxGustKmh : null,
+              annualPrecipMm: s.inputs ? s.inputs.annualPrecipMm : null,
+              maxTempC: s.inputs ? s.inputs.maxTempC : null
+            }
+          };
+          this.analysisId = analysis.id;
+          this.kris = s.kris || [];
+        },
+
+        /* Fallback demo generator (offline). */
+        applyDemoData() {
           const seed = this.searchQuery.length;
           const safety = Math.max(25, Math.min(85, ((seed * 7) % 60) + 25));
           const serviceability = Math.max(30, Math.min(88, ((seed * 9) % 55) + 30));
@@ -861,23 +1042,34 @@
             yearBuilt: matched ? matched.year : 1980 + (seed % 35),
             floors: matched ? matched.floors : 25 + (seed % 40),
             facadeArea: matched ? matched.facadeArea : (15000 + seed * 450).toLocaleString(),
+            height: null,
             image: matched ? matched.image : "assets/img/default-building.svg",
-            googleMapsUrl: matched ? matched.googleMapsUrl : "https://maps.google.com/?q=" + encodeURIComponent(this.searchQuery),
-            coordinates: matched ? matched.coordinates : "—",
-            mapRating: matched ? matched.mapRating : (3.5 + (seed % 15) / 10).toFixed(1),
-            reviewsCount: matched ? matched.reviewsCount : 40 + (seed * 23),
-            googleComments: matched ? matched.comments : [],
+            googleMapsUrl: "https://www.openstreetmap.org/?mlat=0&mlon=0#map=18/0/0",
+            coordinates: "—",
+            lat: null, lon: null,
+            footprint: null,
             safetyScore: safety,
             serviceabilityScore: serviceability,
             sustainabilityScore: sustainability,
-            peerGroupCount: 95 + (seed % 50),
-            peerPercentile: Math.round((safety + serviceability) / 2.2),
+            peerGroupCount: 250,
+            peerPercentile: Math.max(2, Math.min(98, 105 - Math.round(safety * 0.4 + serviceability * 0.35 + sustainability * 0.25))),
             financialImpact: {
               energyWaste: Math.round(30000 + seed * 850),
               insuranceSurcharge: Math.round(12000 + seed * 420),
               deferredMaintenancePenalty: Math.round(120000 + seed * 2800)
+            },
+            dataCompleteness: 45,
+            flags: ["Demo data — the live backend is offline."],
+            data: {
+              buildingType: matched ? matched.type : "building",
+              height: null, levels: matched ? matched.floors : null,
+              age: matched ? new Date().getFullYear() - matched.year : null,
+              buildingMaterial: null, roofMaterial: null,
+              footprintAreaM2: null, maxGustKmh: null, annualPrecipMm: null, maxTempC: null
             }
           };
+          this.analysisId = null;
+          this.kris = [];
         },
 
         /* ---------- lead capture ---------- */
@@ -901,7 +1093,7 @@
 
           this.isSubmitting = true;
           try {
-            await RaspectData.createLead({
+            const payload = {
               name: f.name.trim(),
               email: f.email.trim().toLowerCase(),
               phone: f.phone.trim(),
@@ -909,8 +1101,15 @@
               notes: f.notes.trim(),
               building: this.activeBuilding.address,
               score: this.overallScore,
+              subScores: {
+                safety: this.activeBuilding.safetyScore,
+                serviceability: this.activeBuilding.serviceabilityScore,
+                sustainability: this.activeBuilding.sustainabilityScore
+              },
+              financial: this.activeBuilding.financialImpact,
               source: "Score Tool"
-            });
+            };
+            await this.postLead(payload);
             this.showLeadModal = false;
             RaspectUtils.toast("Inspection Request Received! A RaSpect Building Engineer will contact you within 2 hours.");
             this.leadForm = { name: "", email: "", phone: "", role: "Building Owner / Asset Manager", notes: "" };
@@ -930,7 +1129,7 @@
 
           this.isSubmitting = true;
           try {
-            await RaspectData.createLead({
+            await this.postLead({
               name: f.name.trim(),
               email: f.email.trim().toLowerCase(),
               phone: "",
@@ -938,6 +1137,12 @@
               notes: "Requested executive PDF report.",
               building: this.activeBuilding.address,
               score: this.overallScore,
+              subScores: {
+                safety: this.activeBuilding.safetyScore,
+                serviceability: this.activeBuilding.serviceabilityScore,
+                sustainability: this.activeBuilding.sustainabilityScore
+              },
+              financial: this.activeBuilding.financialImpact,
               source: "Score Tool"
             });
             this.showPdfModal = false;
@@ -951,6 +1156,23 @@
             console.error(e);
           } finally {
             this.isSubmitting = false;
+          }
+        },
+
+        /** Post a lead to the backend, falling back to local storage offline. */
+        async postLead(payload) {
+          try {
+            const res = await fetch(window.APP_CONFIG.apiBase + "/leads", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            return res.json();
+          } catch (e) {
+            // offline fallback — store locally so nothing is lost
+            await RaspectData.createLead(payload);
+            return payload;
           }
         },
 
@@ -982,6 +1204,47 @@
         renderCharts() {
           this.renderGauge();
           this.renderPeerChart();
+        },
+
+        /* ---------- Leaflet footprint map ---------- */
+        renderMap() {
+          const el = document.getElementById("footprint-map");
+          if (!el || typeof L === "undefined") return;
+          const { lat, lon } = this.activeBuilding;
+          if (!lat || !lon) return;
+
+          if (this.mapInstance) { this.mapInstance.remove(); this.mapInstance = null; }
+
+          const map = L.map(el, { zoomControl: true, attributionControl: false }).setView([lat, lon], 18);
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          }).addTo(map);
+
+          // Building footprint polygon (from real OSM data)
+          if (this.activeBuilding.footprint && this.activeBuilding.footprint.length >= 3) {
+            const ring = this.activeBuilding.footprint.map(([lo, la]) => [la, lo]);
+            L.polygon(ring, {
+              color: "#0d9488",
+              weight: 2,
+              fillColor: "#14b8a6",
+              fillOpacity: 0.35
+            }).addTo(map).bindPopup("<b>" + RaspectUtils.escapeHtml(this.activeBuilding.address) + "</b><br>Real building footprint (OpenStreetMap)");
+            map.fitBounds(L.polygon(ring).getBounds(), { padding: [20, 20] });
+          } else {
+            L.circleMarker([lat, lon], { radius: 8, color: "#0d9488", fillColor: "#14b8a6", fillOpacity: 0.8, weight: 2 })
+              .addTo(map)
+              .bindPopup("<b>" + RaspectUtils.escapeHtml(this.activeBuilding.address) + "</b><br>Footprint not mapped in OpenStreetMap");
+          }
+
+          this.mapInstance = map;
+          // Leaflet needs a valid size after the container becomes visible
+          setTimeout(() => { try { map.invalidateSize(); } catch (e) {} }, 120);
+        },
+
+        switchViewMode(mode) {
+          this.viewMode = mode;
+          if (mode === "map") this.$nextTick(() => this.renderMap());
         },
 
         renderGauge() {

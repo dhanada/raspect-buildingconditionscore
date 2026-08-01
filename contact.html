@@ -142,6 +142,7 @@
   <script src="assets/js/utils.js"></script>
   <script src="assets/js/storage.js"></script>
   <script src="assets/js/components.js"></script>
+  <script src="assets/js/config.js"></script>
   <script>
     function contactApp() {
       return {
@@ -164,13 +165,24 @@
 
           this.isSubmitting = true;
           try {
-            await RaspectData.createMessage({
+            const payload = {
               name: f.name.trim(),
               email: f.email.trim().toLowerCase(),
               company: f.company.trim(),
               topic: f.topic,
               message: f.message.trim()
-            });
+            };
+            try {
+              const api = window.APP_CONFIG.apiBase;
+              const res = await fetch(api + "/messages", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+              });
+              if (!res.ok) throw new Error("HTTP " + res.status);
+            } catch (e) {
+              await RaspectData.createMessage(payload); // offline fallback
+            }
             RaspectUtils.toast("Message sent! We'll be in touch within one business day.");
             this.form = { name: "", email: "", company: "", topic: "Facade Inspection", message: "" };
           } catch (e) {

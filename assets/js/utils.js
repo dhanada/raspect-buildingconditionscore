@@ -19,6 +19,11 @@ window.RaspectUtils = (() => {
     return Number(val || 0).toLocaleString("en-US");
   }
 
+  /** Clamp a number into a range. */
+  function clamp(v, lo, hi) {
+    return Math.max(lo, Math.min(hi, v));
+  }
+
   /** Correct ordinal suffix: 1 -> 1st, 2 -> 2nd, 3 -> 3rd, 21 -> 21st, 22 -> 22nd ... */
   function ordinal(n) {
     const s = ["th", "st", "nd", "rd"];
@@ -139,7 +144,7 @@ window.RaspectUtils = (() => {
   }
 
   return {
-    $, $$, formatCurrency, formatNumber, ordinal, escapeHtml,
+    $, $$, formatCurrency, formatNumber, ordinal, escapeHtml, clamp,
     debounce, downloadFile, toCSV, formatDateTime, timeAgo,
     toast, isValidEmail, isValidPhone
   };

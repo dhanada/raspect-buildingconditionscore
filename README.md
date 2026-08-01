@@ -1,8 +1,8 @@
 # BuildingConditionScore — RaSpect Inspectica™ Intelligence
 
-A production-structured, multi-page lead-generation web product for RaSpect's **BuildingConditionScore** — an AI-powered diagnostic that generates building envelope risk scores for any address.
+A production-structured, multi-page **lead-generation web product** for RaSpect's **BuildingConditionScore** — an AI-powered diagnostic that generates building envelope risk scores for any address.
 
-Built as a **static, self-contained web app** (no build step, no backend required) with a **backend-ready data layer**, so it can be deployed to any static host today and connected to a real CRM/API later.
+**Full-stack:** static frontend (GitHub Pages) + a **Node.js/Express API** that computes scores from **real public data** (OpenStreetMap/Nominatim + Open-Meteo) with **SQLite** persistence for leads, messages and analyses.
 
 ---
 
@@ -11,33 +11,81 @@ Built as a **static, self-contained web app** (no build step, no backend require
 | Page | Route | Purpose |
 |---|---|---|
 | Landing | `index.html` | Marketing homepage — value prop, features, testimonials, CTAs |
-| Score Tool | `score.html` | The core diagnostic: address search → BuildingConditionScore, KRIs, financial risk, peer benchmarking, drone-vs-manual simulator, lead capture |
+| Score Tool | `score.html` | Real-data diagnostics: footprint map, building attributes, climate, score, KRIs, financial risk, lead capture |
 | Leads Admin | `leads.html` | Back office — view, filter, status-manage, and CSV-export captured leads |
-| Methodology | `methodology.html` | Explains the scoring model (Safety 40 / Serviceability 35 / Sustainability 25) |
-| Contact | `contact.html` | Contact form that persists messages alongside leads |
+| Methodology | `methodology.html` | Explains the transparent scoring model (Safety 40 / Serviceability 35 / Sustainability 25) |
+| Contact | `contact.html` | Contact form persisted to the backend |
 
 ---
 
 ## Tech Stack
 
-- **HTML5 + Tailwind CSS** (vendored play CDN — see *Upgrade note* below)
-- **Alpine.js** for interactivity (vendored)
-- **Chart.js** for the gauge & peer-benchmark charts (vendored)
-- **Lucide** for icons (vendored)
-- **localStorage** as the persistence layer behind a clean repository abstraction
+**Frontend (static — GitHub Pages):**
+- HTML5 + Tailwind CSS, Alpine.js, Chart.js, Lucide, **Leaflet** (all vendored in `vendor/` — no runtime CDN)
+- Config: `assets/js/config.js` (`window.APP_CONFIG.apiBase`) is the single place the site learns the API URL
 
-All vendor libraries are stored locally in `vendor/` so the product runs fully offline and self-contained — no CDN at runtime.
+**Backend (`server/` — Node 24 + Express):**
+- **SQLite** via Node's built-in `node:sqlite` (zero native deps)
+- **Nominatim** (OSM) geocoding — address → coordinates
+- **Overpass** (OSM) — real building footprints, height, levels, materials, age
+- **Open-Meteo** — 12 months of wind / temperature / precipitation
+- Transparent scoring engine (`server/scoring.js`) — every penalty itemised, data gaps reported honestly
 
 ---
 
 ## Running locally
 
-A PowerShell static file server is included (`serve.ps1`) because this machine has neither Node nor Python:
-
+1. Start the backend:
+```powershell
+cd server
+npm install
+copy .env.example .env     # adjust if needed
+node index.js              # → http://localhost:4000/api
+```
+2. Serve the frontend (PowerShell static server):
 ```powershell
 powershell -ExecutionPolicy Bypass -File serve.ps1 -Port 8099
 # → http://localhost:8099/
 ```
+
+The frontend auto-detects `localhost` and calls `http://localhost:4000/api`. If the backend is offline, the site gracefully falls back to demo data and shows a "Demo mode" notice.
+
+---
+
+## API
+
+| Method | Route | Purpose |
+|---|---|---|
+| `GET`  | `/api/health` | Health check |
+| `POST` | `/api/score` | `{ address }` → geocode + building data + climate + score (real) |
+| `GET`  | `/api/score/:id` | Retrieve a stored analysis |
+| `GET`  | `/api/leads` | List leads |
+| `POST` | `/api/leads` | Capture a lead (name, email, building, score, sub-scores…) |
+| `PATCH`| `/api/leads/:id` | Update status / notes |
+| `DELETE` | `/api/leads` · `/api/leads/:id` | Clear / delete leads |
+| `GET`/`POST` | `/api/messages` | Contact messages |
+
+---
+
+## Deploying
+
+**Frontend → GitHub Pages:** already automated via `.github/workflows/pages.yml` (push to `main`).
+
+**Backend → free cloud host** (choose one):
+
+### Option A — Railway
+1. Create a project at [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub** → select this repo.
+2. Set env vars: `CORS_ORIGINS=https://dhanada.github.io` (or your URL), `SQLITE_PATH=/data/raspect.db`.
+3. Add a **Volume** mounted at `/data` (so SQLite data survives redeploys).
+4. Copy the generated URL (e.g. `https://raspect-api.up.railway.app`) into `assets/js/config.js` as `apiBase`, commit & push.
+
+### Option B — Render
+1. In [render.com](https://render.com) → **New** → **Blueprint** → select this repo (`render.yaml` is picked up automatically).
+2. `render.yaml` already wires the Dockerfile, health check, env vars and a **1 GB persistent disk** at `/var/data`.
+3. Set `CORS_ORIGINS` to your frontend URL, copy the service URL into `assets/js/config.js`, commit & push.
+
+> **CORS:** the backend only allows the origins listed in `CORS_ORIGINS`. Add every frontend URL you use (localhost + GitHub Pages + custom domain).
+
 
 You can also just open the HTML files directly, or deploy the folder to **GitHub Pages**, **Netlify**, **Vercel**, **Azure Static Web Apps**, or any web server.
 
