@@ -30,10 +30,15 @@ module.exports = function scoreRoutes(db) {
       // Prefer the EXACT building the geocoder resolved to (Nominatim/Photon
       // return the OSM way/relation id of the addressed building), falling back
       // to the nearest building footprint, then a Nominatim name/address lookup.
+      // When the geocoder hit is a ROAD (e.g. "133 Wai Yip Street" resolves to the
+      // street way), skip the exact-element query — street ways can be enormous and
+      // slow Overpass — and go straight to the nearest-building lookup.
+      const geoIsRoad = !!(geo.class === "highway" || isRoadType(geo.type));
+
       const [building, climate] = await Promise.all([
         (async () => {
-          // 1) Exact element via Overpass (full tags + footprint)
-          if (geo.osmType && geo.osmId) {
+          // 1) Exact building element via Overpass (full tags + footprint)
+          if (!geoIsRoad && geo.osmType && geo.osmId) {
             const exact = await queryBuildingById(geo.osmType, geo.osmId);
             if (exact && exact.building) return exact;
           }
@@ -41,7 +46,7 @@ module.exports = function scoreRoutes(db) {
           const near = await queryBuilding(geo.lat, geo.lon);
           if (near && near.building) return near;
           // 3) Last resort: exact element name/address via Nominatim lookup
-          if (geo.osmType && geo.osmId) {
+          if (!geoIsRoad && geo.osmType && geo.osmId) {
             const nom = await queryBuildingByNominatim(geo.osmType, geo.osmId);
             if (nom && nom.building) return nom;
           }
@@ -136,6 +141,19 @@ module.exports = function scoreRoutes(db) {
 };
 
 function round6(v) { return Math.round(v * 1e6) / 1e6; }
+
+/** Nominatim/Photon road "type" values — when the geocoder hit is a street, we
+ * skip the exact-element query (street ways are huge and slow Overpass). */
+const ROAD_TYPES = new Set([
+  "primary", "primary_link", "secondary", "secondary_link", "tertiary", "tertiary_link",
+  "residential", "unclassified", "motorway", "motorway_link", "trunk", "trunk_link",
+  "service", "living_street", "pedestrian", "footway", "cycleway", "path", "steps",
+  "track", "road", "highway"
+]);
+function isRoadType(t) {
+  if (!t) return false;
+  return ROAD_TYPES.has(String(t).toLowerCase());
+}
 
 /* ---------------- source references ---------------- */
 
