@@ -37,7 +37,8 @@ async function geocodeNominatim(address) {
     encodeURIComponent(address);
 
   const res = await fetch(url, {
-    headers: { "User-Agent": USER_AGENT, Accept: "application/json" }
+    headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+    signal: AbortSignal.timeout(12000)
   });
   if (!res.ok) throw new Error("Geocoding failed: HTTP " + res.status);
 
@@ -53,7 +54,10 @@ async function geocodeNominatim(address) {
     type: hit.type,
     class: hit.class,
     importance: hit.importance,
-    boundingbox: hit.boundingbox ? hit.boundingbox.map(Number) : null
+    boundingbox: hit.boundingbox ? hit.boundingbox.map(Number) : null,
+    // OSM element the address resolved to — lets us query the EXACT building
+    osmType: hit.osm_type || null,
+    osmId: hit.osm_id || null
   };
 }
 
@@ -61,7 +65,10 @@ async function geocodeNominatim(address) {
 
 async function geocodePhoton(address) {
   const url = "https://photon.komoot.io/api/?limit=1&lang=en&q=" + encodeURIComponent(address);
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT, Accept: "application/json" } });
+  const res = await fetch(url, {
+    headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+    signal: AbortSignal.timeout(12000)
+  });
   if (!res.ok) throw new Error("Photon geocoding failed: HTTP " + res.status);
 
   const data = await res.json();
@@ -70,6 +77,11 @@ async function geocodePhoton(address) {
 
   const p = f.properties || {};
   const parts = [p.name, p.street, p.city, p.state, p.country].filter(Boolean);
+  const osmShort = p.osm_type || null; // Photon uses "W" | "N" | "R"
+  const osmType = osmShort === "W" ? "way"
+    : osmShort === "N" ? "node"
+    : osmShort === "R" ? "relation"
+    : osmShort ? String(osmShort).toLowerCase() : null;
   return {
     provider: "photon",
     lat: f.geometry.coordinates[1],
@@ -78,7 +90,9 @@ async function geocodePhoton(address) {
     type: p.type || p.osm_value || null,
     class: p.osm_key || null,
     importance: null,
-    boundingbox: null
+    boundingbox: null,
+    osmType,
+    osmId: p.osm_id || null
   };
 }
 
@@ -89,7 +103,10 @@ async function geocodeOpenMeteo(address) {
     "https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&format=json&name=" +
     encodeURIComponent(address);
 
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT, Accept: "application/json" } });
+  const res = await fetch(url, {
+    headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+    signal: AbortSignal.timeout(12000)
+  });
   if (!res.ok) throw new Error("Fallback geocoding failed: HTTP " + res.status);
 
   const data = await res.json();
@@ -105,7 +122,9 @@ async function geocodeOpenMeteo(address) {
     type: hit.feature_code || null,
     class: hit.feature_code ? "place" : null,
     importance: null,
-    boundingbox: null
+    boundingbox: null,
+    osmType: null,
+    osmId: null
   };
 }
 

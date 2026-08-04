@@ -76,7 +76,13 @@
             </button>
           </form>
 
-          <div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500">
+          <p class="mt-2 text-[11px] text-slate-400">
+            Tip: include the city &amp; country for accurate results — e.g.
+            <span class="font-mono text-slate-500">"133 Wai Yip Street, Ngau Tau Kok, Hong Kong"</span>.
+            Short forms like "100 Queen street" can resolve to the wrong city.
+          </p>
+
+          <div class="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500">
             <span class="font-bold text-slate-600">Sample Assets:</span>
             <template x-for="preset in sampleProperties" :key="preset.address">
               <button @click="selectPreset(preset)" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-sm transition flex items-center space-x-1.5 hover:border-brand-300">

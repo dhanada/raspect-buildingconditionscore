@@ -56,7 +56,10 @@ async function commonsSearch(query) {
   const url =
     WIKIMEDIA_API + "?action=query&list=search&format=json&origin=*&srnamespace=6" +
     "&srlimit=12&srwhat=text&srsearch=" + encodeURIComponent(query);
-  const res = await fetch(url, { headers: { "User-Agent": "RaSpect-Inspectica/1.0", Accept: "application/json" } });
+  const res = await fetch(url, {
+    headers: { "User-Agent": "RaSpect-Inspectica/1.0", Accept: "application/json" },
+    signal: AbortSignal.timeout(12000)
+  });
   if (!res.ok) throw new Error("Wikimedia HTTP " + res.status);
   const data = await res.json();
   return (data.query && data.query.search) || [];
@@ -69,7 +72,10 @@ async function enrich(searchResults) {
   const url =
     WIKIMEDIA_API + "?action=query&format=json&origin=*&prop=imageinfo" +
     "&iiprop=url|extmetadata&iiurlwidth=1200&titles=" + encodeURIComponent(titles.join("|"));
-  const res = await fetch(url, { headers: { "User-Agent": "RaSpect-Inspectica/1.0", Accept: "application/json" } });
+  const res = await fetch(url, {
+    headers: { "User-Agent": "RaSpect-Inspectica/1.0", Accept: "application/json" },
+    signal: AbortSignal.timeout(12000)
+  });
   if (!res.ok) throw new Error("Wikimedia imageinfo HTTP " + res.status);
   const data = await res.json();
   const pages = (data.query && data.query.pages) || {};

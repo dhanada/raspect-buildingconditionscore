@@ -37,29 +37,8 @@ async function queryBuilding(lat, lon, radiusMeters = 60) {
     out geom;
   `;
 
-  let data = null;
-  let lastErr = null;
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        body: "data=" + encodeURIComponent(overpassQuery),
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": USER_AGENT,
-          "Accept": "application/json"
-        }
-      });
-      if (!res.ok) throw new Error(`Overpass HTTP ${res.status} @ ${endpoint}`);
-      data = await res.json();
-      break;
-    } catch (err) {
-      lastErr = err;
-    }
-  }
-  if (!data) throw lastErr || new Error("Overpass unavailable");
-
-  const elements = data.elements || [];
+  const data = await runOverpass(overpassQuery);
+  const elements = data ? data.elements || [] : [];
   if (!elements.length) {
     const result = null;
     cache.set(key, result);
@@ -71,6 +50,145 @@ async function queryBuilding(lat, lon, radiusMeters = 60) {
   candidates.sort((a, b) => tagScore(b.tags) - tagScore(a.tags));
   const picked = candidates[0];
 
+  const result = toBuildingResult(picked);
+  cache.set(key, result);
+  return result;
+}
+
+/**
+ * Query a SPECIFIC OSM element (e.g. the exact building Nominatim resolved the
+ * address to). Returns null when the element is missing or is not a building,
+ * so the caller can fall back to the nearest-building lookup.
+ * @param {string} osmType  "way" | "relation" | "node"
+ * @param {number|string} osmId
+ */
+async function queryBuildingById(osmType, osmId) {
+  const type = normalizeOsmType(osmType);
+  if (!type || type === "node" || !osmId) return null;
+  const key = `${type}/${osmId}`;
+  if (cache.has(key)) return cache.get(key);
+
+  // `out body geom;` returns tags + embedded geometry for a single element
+  // (plain `out geom;` 504s on some mirrors for large ways).
+  const overpassQuery = `[out:json][timeout:15];${type}(${osmId});out body geom;`;
+  const data = await runOverpass(overpassQuery);
+  const el = data && data.elements && data.elements[0];
+  if (!el || !el.tags || !el.tags.building) {
+    cache.set(key, null);
+    return null;
+  }
+  const result = toBuildingResult(el);
+  cache.set(key, result);
+  return result;
+}
+
+/** Fetch an Overpass query with endpoint failover + timeout. Returns null on total failure. */
+async function runOverpass(overpassQuery, timeoutMs = 7000) {
+  let lastErr = null;
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        body: "data=" + encodeURIComponent(overpassQuery),
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": USER_AGENT,
+          "Accept": "application/json"
+        },
+        signal: AbortSignal.timeout(timeoutMs)
+      });
+      if (!res.ok) throw new Error(`Overpass HTTP ${res.status} @ ${endpoint}`);
+      return await res.json();
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  console.warn("[osm] Overpass unavailable:", lastErr && lastErr.message);
+  return null;
+}
+
+/**
+ * Last-resort fallback: fetch the exact OSM element's name/address from the
+ * Nominatim lookup API (more reliable than Overpass when mirrors are down).
+ * Overpass is preferred because it also returns levels/height/material + footprint;
+ * Nominatim only returns name, type and address. Returns null if not a building.
+ */
+async function queryBuildingByNominatim(osmType, osmId) {
+  const type = normalizeOsmType(osmType);
+  if (!type || !osmId) return null;
+  const prefix = type === "way" ? "W" : type === "relation" ? "R" : "N";
+  const key = `nom-${type}/${osmId}`;
+  if (cache.has(key)) return cache.get(key);
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/lookup?osm_ids=${prefix}${osmId}&format=jsonv2`;
+    const res = await fetch(url, {
+      headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+      signal: AbortSignal.timeout(12000)
+    });
+    if (!res.ok) throw new Error("Nominatim lookup HTTP " + res.status);
+    const arr = await res.json();
+    const d = (arr && arr[0]) || null;
+    if (!d) { cache.set(key, null); return null; }
+
+    const building = mapBuildingType(d.type);
+    if (!building) { cache.set(key, null); return null; }
+
+    const a = d.address || {};
+    const result = {
+      osmId: `${type}/${osmId}`,
+      name: d.name || null,
+      building,
+      buildingLevels: null,
+      buildingHeight: null,
+      buildingMaterial: null,
+      roofShape: null,
+      roofMaterial: null,
+      roofHeight: null,
+      yearBuilt: null,
+      conditionNotes: [],
+      addr: {
+        street: a.road || null,
+        housenumber: a.house_number || null,
+        city: a.city || a.city_district || null,
+        postcode: a.postcode || null,
+        country: a.country || null
+      },
+      footprint: null,
+      footprintAreaM2: null,
+      coords: d.lat ? { lat: parseFloat(d.lat), lon: parseFloat(d.lon) } : null
+    };
+    cache.set(key, result);
+    return result;
+  } catch (err) {
+    console.warn("[osm] Nominatim lookup failed:", err.message);
+    return null;
+  }
+}
+
+function mapBuildingType(nominatimType) {
+  if (!nominatimType) return null;
+  const t = String(nominatimType).toLowerCase();
+  const buildingish = [
+    "commercial", "office", "residential", "apartments", "house", "building",
+    "hotel", "retail", "industrial", "warehouse", "service", "hospital",
+    "school", "university", "government", "public", "civic"
+  ];
+  if (buildingish.includes(t)) return t === "building" ? "yes" : t;
+  return null;
+}
+
+function normalizeOsmType(t) {
+  if (!t) return null;
+  const s = String(t).toLowerCase();
+  if (s === "way" || s === "w") return "way";
+  if (s === "relation" || s === "r") return "relation";
+  if (s === "node" || s === "n") return "node";
+  return s;
+}
+
+/** Build the standard building result object from an Overpass element. */
+function toBuildingResult(picked) {
   // Extract footprint polygon from embedded geometry (out geom).
   const footprint = Array.isArray(picked.geometry)
     ? picked.geometry.map((g) => [g.lon, g.lat])
@@ -107,8 +225,6 @@ async function queryBuilding(lat, lon, radiusMeters = 60) {
   // Derive footprint area from polygon (shoelace formula on lon/lat —
   // approximate planar area, fine for relative comparisons).
   result.footprintAreaM2 = footprint.length >= 3 ? polygonAreaM2(footprint) : null;
-
-  cache.set(key, result);
   return result;
 }
 
@@ -149,4 +265,4 @@ function polygonAreaM2(coords) {
   return Math.abs(sum / 2) * (mPerDeg * mPerDeg);
 }
 
-module.exports = { queryBuilding };
+module.exports = { queryBuilding, queryBuildingById, queryBuildingByNominatim };

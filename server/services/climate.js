@@ -25,7 +25,7 @@ async function getClimate(lat, lon) {
     `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max` +
     `&timezone=auto`;
 
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error("Open-Meteo failed: HTTP " + res.status);
   const data = await res.json();
   const d = data.daily || {};

@@ -82,7 +82,7 @@ async function findPlaceId(name) {
   const url =
     "https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=" +
     encodeURIComponent(name) + "&inputtype=textquery&fields=place_id&key=" + API_KEY;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
   const data = await res.json();
   return data.candidates && data.candidates[0] ? data.candidates[0].place_id : null;
 }
@@ -91,7 +91,7 @@ async function placeDetails(placeId) {
   const url =
     "https://maps.googleapis.com/maps/api/place/details/json?place_id=" +
     encodeURIComponent(placeId) + "&fields=rating,user_ratings_total,reviews&key=" + API_KEY;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
   const data = await res.json();
   return data.result || {};
 }

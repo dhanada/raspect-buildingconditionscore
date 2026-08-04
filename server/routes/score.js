@@ -5,7 +5,7 @@ const express = require("express");
 const router = express.Router();
 
 const { geocode } = require("../services/geocoder");
-const { queryBuilding } = require("../services/osm");
+const { queryBuilding, queryBuildingById, queryBuildingByNominatim } = require("../services/osm");
 const { getClimate } = require("../services/climate");
 const { tileFor, findBuildingImages } = require("../services/imagery");
 const { findUserReviews } = require("../services/reviews");
@@ -27,8 +27,26 @@ module.exports = function scoreRoutes(db) {
     try {
       const geo = await geocode(address);
 
+      // Prefer the EXACT building the geocoder resolved to (Nominatim/Photon
+      // return the OSM way/relation id of the addressed building), falling back
+      // to the nearest building footprint, then a Nominatim name/address lookup.
       const [building, climate] = await Promise.all([
-        queryBuilding(geo.lat, geo.lon),
+        (async () => {
+          // 1) Exact element via Overpass (full tags + footprint)
+          if (geo.osmType && geo.osmId) {
+            const exact = await queryBuildingById(geo.osmType, geo.osmId);
+            if (exact && exact.building) return exact;
+          }
+          // 2) Nearest building via Overpass
+          const near = await queryBuilding(geo.lat, geo.lon);
+          if (near && near.building) return near;
+          // 3) Last resort: exact element name/address via Nominatim lookup
+          if (geo.osmType && geo.osmId) {
+            const nom = await queryBuildingByNominatim(geo.osmType, geo.osmId);
+            if (nom && nom.building) return nom;
+          }
+          return near; // may be null — scored from climate + defaults
+        })(),
         getClimate(geo.lat, geo.lon)
       ]);
 
