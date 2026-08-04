@@ -88,6 +88,12 @@ async function queryBuilding(lat, lon, radiusMeters = 60) {
     roofMaterial: tags["roof:material"] || null,
     roofHeight: parseNum(tags["roof:height"]),
     yearBuilt: parseNum(tags.start_date) || parseYear(tags) || null,
+    conditionNotes: [
+      tags["building:condition"],
+      tags.fixme,
+      tags.note,
+      tags["addr:note"]
+    ].filter(Boolean).map((s) => String(s).slice(0, 300)),
     addr: {
       street: tags["addr:street"] || null,
       housenumber: tags["addr:housenumber"] || null,

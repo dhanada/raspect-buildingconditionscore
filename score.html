@@ -131,7 +131,7 @@
     </section>
 
     <!-- ============ RESULTS ============ -->
-    <section x-show="hasAnalyzed && !isAnalyzing" x-cloak x-transition:enter="transition ease-out duration-500" class="space-y-8">
+    <section x-show="!isAnalyzing" x-cloak class="space-y-8">
 
       <!-- Building info header -->
       <div class="glass-panel p-5 sm:p-6 rounded-3xl border border-slate-200/90 flex flex-col md:flex-row md:items-center justify-between gap-5 shadow-sm">
@@ -149,11 +149,11 @@
               </a>
             </div>
             <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 mt-1.5 font-mono">
-              <span>Built: <strong class="text-slate-900" x-text="activeBuilding.yearBuilt"></strong></span>
+              <span>Built: <strong class="text-slate-900" x-text="ni(activeBuilding.yearBuilt)"></strong></span>
               <span>•</span>
-              <span>Floors: <strong class="text-slate-900" x-text="activeBuilding.floors"></strong></span>
+              <span>Floors: <strong class="text-slate-900" x-text="ni(activeBuilding.floors)"></strong></span>
               <span>•</span>
-              <span>Facade Area: <strong class="text-slate-900" x-text="activeBuilding.facadeArea + ' m²'"></strong></span>
+              <span>Facade Area: <strong class="text-slate-900" x-text="activeBuilding.facadeArea ? activeBuilding.facadeArea + ' m²' : 'No information available'"></strong></span>
               <span x-show="activeBuilding.height">•</span>
               <span x-show="activeBuilding.height">Height: <strong class="text-slate-900" x-text="activeBuilding.height + ' m'"></strong></span>
               <span>•</span>
@@ -178,48 +178,55 @@
         <div class="lg:col-span-7 glass-panel rounded-3xl border border-slate-200/90 overflow-hidden shadow-sm flex flex-col justify-between">
           <div class="p-4 sm:p-5 border-b border-slate-200/80 flex items-center justify-between flex-wrap gap-2 bg-slate-50/50">
             <div class="flex items-center space-x-2">
-              <i data-lucide="map" class="w-4 h-4 text-brand-600"></i>
+              <i data-lucide="camera" class="w-4 h-4 text-brand-600"></i>
               <h3 class="font-bold text-sm text-slate-900">Facade & Footprint Intelligence</h3>
             </div>
             <div class="flex bg-slate-200 p-1 rounded-xl text-[11px] font-bold" role="tablist" aria-label="View mode">
+              <button @click="switchViewMode('photo')" :class="viewMode === 'photo' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'" class="px-3 py-1 rounded-lg transition flex items-center space-x-1" role="tab">
+                <i data-lucide="camera" class="w-3 h-3"></i>
+                <span>Photo</span>
+              </button>
               <button @click="switchViewMode('map')" :class="viewMode === 'map' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'" class="px-3 py-1 rounded-lg transition" role="tab">
                 <i data-lucide="map" class="w-3 h-3"></i>
-                <span>Footprint Map</span>
+                <span>Map</span>
               </button>
               <button @click="switchViewMode('stylized')" :class="viewMode === 'stylized' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'" class="px-3 py-1 rounded-lg transition flex items-center space-x-1" role="tab">
                 <i data-lucide="building-2" class="w-3 h-3"></i>
-                <span>Stylized View</span>
+                <span>Stylized</span>
               </button>
             </div>
           </div>
 
           <div class="relative h-72 sm:h-80 bg-slate-900 overflow-hidden group">
+            <!-- Real building photograph (Wikimedia Commons) -->
+            <div x-show="viewMode === 'photo'" class="absolute inset-0 flex items-center justify-center bg-slate-900">
+              <template x-if="activeBuilding.photo">
+                <div class="relative w-full h-full">
+                  <img :src="activeBuilding.photo.url" :alt="'Photograph of ' + activeBuilding.address" class="w-full h-full object-cover">
+                  <!-- Attribution overlay -->
+                  <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900/90 to-transparent text-white px-3 py-2 text-[10px] leading-tight">
+                    <span x-text="'Photo: Wikimedia Commons' + (activeBuilding.photo.artist ? ' · ' + activeBuilding.photo.artist : '') + (activeBuilding.photo.license ? ' · ' + activeBuilding.photo.license : '')"></span>
+                  </div>
+                </div>
+              </template>
+              <template x-if="!activeBuilding.photo">
+                <div class="text-center px-6 text-slate-400">
+                  <i data-lucide="image-off" class="w-10 h-10 mx-auto mb-3 opacity-50"></i>
+                  <p class="text-sm font-semibold text-slate-300">No building photo found</p>
+                  <p class="text-[11px] mt-1">No verified photograph of this building was found in available online sources (Wikimedia Commons).</p>
+                  <button @click="switchViewMode('map')" class="mt-3 text-[11px] font-bold text-brand-400 hover:text-brand-300 underline">Show footprint map instead</button>
+                </div>
+              </template>
+            </div>
+
             <!-- Real footprint map (Leaflet + OSM tiles) -->
             <div x-show="viewMode === 'map'" id="footprint-map" class="absolute inset-0 z-0" aria-label="Building footprint map"></div>
 
-            <!-- Stylized building illustration -->
+            <!-- Stylized building illustration (no fabricated defects) -->
             <img x-show="viewMode === 'stylized'" :src="activeBuilding.image" :alt="activeBuilding.address" class="w-full h-full object-cover transition-all duration-500 group-hover:scale-105">
-
-            <template x-if="viewMode === 'stylized'">
-              <div>
-                <div class="absolute top-1/4 left-1/3 group/pin cursor-pointer">
-                  <div class="w-5 h-5 rounded-full bg-red-500/80 border-2 border-white animate-ping absolute inset-0"></div>
-                  <div class="w-5 h-5 rounded-full bg-red-600 border-2 border-white relative z-10 flex items-center justify-center text-white text-[9px] font-bold">!</div>
-                  <div class="absolute left-6 top-0 w-48 p-2.5 rounded-xl bg-slate-900/95 text-white text-[10px] space-y-1 opacity-0 group-hover/pin:opacity-100 transition-opacity z-20 pointer-events-none shadow-xl border border-red-500/50">
-                    <span class="font-bold text-red-400 block">Defect Tag: Concrete Spalling</span>
-                    <p class="text-slate-300">Exterior cladding micro-fracture detected on Floor 22 East elevation.</p>
-                  </div>
-                </div>
-                <div class="absolute bottom-1/3 right-1/4 group/pin cursor-pointer">
-                  <div class="w-5 h-5 rounded-full bg-amber-500/80 border-2 border-white animate-ping absolute inset-0"></div>
-                  <div class="w-5 h-5 rounded-full bg-amber-600 border-2 border-white relative z-10 flex items-center justify-center text-white text-[9px] font-bold">!</div>
-                  <div class="absolute right-6 top-0 w-48 p-2.5 rounded-xl bg-slate-900/95 text-white text-[10px] space-y-1 opacity-0 group-hover/pin:opacity-100 transition-opacity z-20 pointer-events-none shadow-xl border border-amber-500/50">
-                    <span class="font-bold text-amber-400 block">Defect Tag: Thermal Leakage</span>
-                    <p class="text-slate-300">EPDM window seal shrinkage causing HVAC loss.</p>
-                  </div>
-                </div>
-              </div>
-            </template>
+            <div x-show="viewMode === 'stylized'" class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900/90 to-transparent text-white px-3 py-2 text-[10px]">
+              Illustrative representation — not an actual photograph of this building.
+            </div>
 
             <div class="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md text-white px-3 py-1.5 rounded-xl text-xs flex items-center space-x-2 border border-white/20 z-10">
               <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-400"></i>
@@ -268,27 +275,27 @@
             <div class="grid grid-cols-2 gap-2.5 mb-4">
               <div class="p-3 rounded-xl bg-white border border-slate-200/80">
                 <span class="text-[10px] text-slate-500 uppercase block font-bold">Building Type</span>
-                <span class="text-sm font-black font-mono text-slate-900" x-text="activeBuilding.data.buildingType || '—'"></span>
+                <span class="text-sm font-black font-mono text-slate-900" x-text="ni(activeBuilding.data.buildingType)"></span>
               </div>
               <div class="p-3 rounded-xl bg-white border border-slate-200/80">
                 <span class="text-[10px] text-slate-500 uppercase block font-bold">Height</span>
-                <span class="text-sm font-black font-mono text-slate-900" x-text="activeBuilding.data.height ? activeBuilding.data.height + ' m' : '—'"></span>
+                <span class="text-sm font-black font-mono text-slate-900" x-text="activeBuilding.data.height ? activeBuilding.data.height + ' m' : ni(null)"></span>
               </div>
               <div class="p-3 rounded-xl bg-white border border-slate-200/80">
                 <span class="text-[10px] text-slate-500 uppercase block font-bold">Levels</span>
-                <span class="text-sm font-black font-mono text-slate-900" x-text="activeBuilding.data.levels || '—'"></span>
+                <span class="text-sm font-black font-mono text-slate-900" x-text="ni(activeBuilding.data.levels)"></span>
               </div>
               <div class="p-3 rounded-xl bg-white border border-slate-200/80">
                 <span class="text-[10px] text-slate-500 uppercase block font-bold">Year Built</span>
-                <span class="text-sm font-black font-mono text-slate-900" x-text="activeBuilding.data.age != null ? activeBuilding.data.age + ' yrs' : 'Unknown'"></span>
+                <span class="text-sm font-black font-mono text-slate-900" x-text="activeBuilding.data.age != null ? activeBuilding.data.age + ' yrs' : ni(null)"></span>
               </div>
               <div class="p-3 rounded-xl bg-white border border-slate-200/80">
                 <span class="text-[10px] text-slate-500 uppercase block font-bold">Envelope Material</span>
-                <span class="text-sm font-black font-mono text-slate-900" x-text="activeBuilding.data.buildingMaterial || activeBuilding.data.roofMaterial || '—'"></span>
+                <span class="text-sm font-black font-mono text-slate-900" x-text="ni(activeBuilding.data.buildingMaterial || activeBuilding.data.roofMaterial)"></span>
               </div>
               <div class="p-3 rounded-xl bg-white border border-slate-200/80">
                 <span class="text-[10px] text-slate-500 uppercase block font-bold">Footprint</span>
-                <span class="text-sm font-black font-mono text-slate-900" x-text="activeBuilding.data.footprintAreaM2 ? activeBuilding.data.footprintAreaM2.toLocaleString() + ' m²' : '—'"></span>
+                <span class="text-sm font-black font-mono text-slate-900" x-text="activeBuilding.data.footprintAreaM2 ? activeBuilding.data.footprintAreaM2.toLocaleString() + ' m²' : ni(null)"></span>
               </div>
             </div>
 
@@ -300,15 +307,15 @@
               </div>
               <div class="grid grid-cols-3 gap-2 text-center font-mono">
                 <div class="p-2 rounded-xl bg-white border border-slate-200">
-                  <div class="text-lg font-black" :class="activeBuilding.data.maxGustKmh > 120 ? 'text-red-600' : 'text-slate-900'" x-text="activeBuilding.data.maxGustKmh + ' km/h'"></div>
+                  <div class="text-lg font-black" :class="activeBuilding.data.maxGustKmh > 120 ? 'text-red-600' : 'text-slate-900'" x-text="activeBuilding.data.maxGustKmh != null ? activeBuilding.data.maxGustKmh + ' km/h' : ni(null)"></div>
                   <div class="text-[9px] text-slate-500 uppercase font-bold">Max Gust</div>
                 </div>
                 <div class="p-2 rounded-xl bg-white border border-slate-200">
-                  <div class="text-lg font-black" :class="activeBuilding.data.annualPrecipMm > 1100 ? 'text-amber-600' : 'text-slate-900'" x-text="activeBuilding.data.annualPrecipMm + ' mm'"></div>
+                  <div class="text-lg font-black" :class="activeBuilding.data.annualPrecipMm > 1100 ? 'text-amber-600' : 'text-slate-900'" x-text="activeBuilding.data.annualPrecipMm != null ? activeBuilding.data.annualPrecipMm + ' mm' : ni(null)"></div>
                   <div class="text-[9px] text-slate-500 uppercase font-bold">Rain / yr</div>
                 </div>
                 <div class="p-2 rounded-xl bg-white border border-slate-200">
-                  <div class="text-lg font-black" :class="activeBuilding.data.maxTempC > 38 ? 'text-amber-600' : 'text-slate-900'" x-text="activeBuilding.data.maxTempC + '°C'"></div>
+                  <div class="text-lg font-black" :class="activeBuilding.data.maxTempC > 38 ? 'text-amber-600' : 'text-slate-900'" x-text="activeBuilding.data.maxTempC != null ? activeBuilding.data.maxTempC + '°C' : ni(null)"></div>
                   <div class="text-[9px] text-slate-500 uppercase font-bold">Max Temp</div>
                 </div>
               </div>
@@ -332,6 +339,60 @@
               <i data-lucide="arrow-right" class="w-3 h-3"></i>
             </a>
           </div>
+        </div>
+      </div>
+
+      <!-- Confirmed Defects & Evidence -->
+      <div class="glass-panel p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-sm">
+        <div class="flex items-center justify-between border-b border-slate-200/80 pb-3 mb-4">
+          <div>
+            <div class="flex items-center space-x-2">
+              <i data-lucide="search-check" class="w-5 h-5 text-brand-600"></i>
+              <h3 class="font-bold text-base text-slate-900">Confirmed Defects & Evidence</h3>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">Shown only when a defect is actually visible in a photo or reported in online reviews — never assumed.</p>
+          </div>
+          <span class="px-2.5 py-1 rounded-lg text-xs font-bold border" :class="activeBuilding.confirmedDefects.length ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'">
+            <span x-text="activeBuilding.confirmedDefects.length + (activeBuilding.confirmedDefects.length === 1 ? ' reported' : ' reported')"></span>
+          </span>
+        </div>
+
+        <!-- Evidence-backed defects -->
+        <div x-show="activeBuilding.confirmedDefects.length" x-cloak class="space-y-3">
+          <template x-for="defect in activeBuilding.confirmedDefects" :key="defect.name + defect.evidence">
+            <div class="p-3.5 rounded-2xl bg-red-50/60 border border-red-200 space-y-2">
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex items-center space-x-2">
+                  <div class="p-2 rounded-xl bg-red-100 text-red-600">
+                    <i :data-lucide="defect.icon || 'alert-triangle'" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-sm text-slate-900" x-text="defect.name"></h4>
+                    <span class="text-[10px] text-slate-500 font-mono" x-text="'Evidence: ' + defect.source"></span>
+                  </div>
+                </div>
+              </div>
+              <p class="text-xs text-slate-600 italic leading-relaxed" x-text="'“' + defect.evidence + '”'"></p>
+              <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                <span x-text="defect.author ? 'Reported by ' + defect.author + (defect.date ? ' · ' + defect.date : '') : (defect.date || '')"></span>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Honest empty state -->
+        <div x-show="!activeBuilding.confirmedDefects.length" x-cloak class="flex items-start space-x-3 p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 text-emerald-800">
+          <i data-lucide="check-circle-2" class="w-5 h-5 flex-shrink-0 text-emerald-600"></i>
+          <div>
+            <p class="text-xs font-semibold">No confirmed defects found in available public sources.</p>
+            <p class="text-[11px] mt-0.5 opacity-80">This means no user review or photo we could access shows a visible defect. It does not replace a physical inspection.</p>
+          </div>
+        </div>
+
+        <!-- Comment source availability note -->
+        <div x-show="activeBuilding.reviewsNote" x-cloak class="mt-3 flex items-start space-x-2 text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+          <i data-lucide="info" class="w-3.5 h-3.5 flex-shrink-0 mt-0.5"></i>
+          <span x-text="activeBuilding.reviewsNote"></span>
         </div>
       </div>
 
@@ -428,8 +489,8 @@
       <div class="space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 class="text-xl font-extrabold text-slate-900">Key Risk Indicators (KRI Diagnostics)</h3>
-            <p class="text-xs text-slate-500">Detailed breakdown across Safety, Serviceability, and Sustainability pillars</p>
+            <h3 class="text-xl font-extrabold text-slate-900">Desk-based Risk Indicators</h3>
+            <p class="text-xs text-slate-500">Statistical risk estimates from public data (age, climate, materials) — <strong>not confirmed defects</strong>. See "Confirmed Defects" above for evidence-backed findings.</p>
           </div>
           <div class="flex space-x-1 bg-slate-200/70 p-1 rounded-2xl border border-slate-300/70 text-xs self-start sm:self-auto" role="tablist" aria-label="KRI category">
             <button @click="activeTab = 'safety'" :class="activeTab === 'safety' ? 'bg-brand-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900 font-medium'" class="px-4 py-1.5 rounded-xl transition" role="tab">Safety</button>
@@ -456,6 +517,37 @@
               </div>
             </div>
           </template>
+        </div>
+      </div>
+
+      <!-- Data Sources & References -->
+      <div class="glass-panel p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-sm">
+        <div class="flex items-center justify-between border-b border-slate-200/80 pb-3 mb-4">
+          <div>
+            <div class="flex items-center space-x-2">
+              <i data-lucide="bookmark-check" class="w-5 h-5 text-brand-600"></i>
+              <h3 class="font-bold text-base text-slate-900">Data Sources & References</h3>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">Every figure above is traceable to a public source. Follow the links to verify.</p>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <template x-for="src in activeBuilding.sources" :key="src.label + src.value">
+            <div class="flex items-start justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs">
+              <div class="min-w-0">
+                <div class="font-bold text-slate-900" x-text="src.label"></div>
+                <div class="text-slate-600 mt-0.5 break-words" x-text="src.value"></div>
+                <div class="text-[10px] text-slate-400 mt-0.5" x-text="'Source: ' + src.source"></div>
+              </div>
+              <a :href="src.url" target="_blank" rel="noopener" class="flex-shrink-0 text-brand-700 font-bold hover:underline flex items-center space-x-1">
+                <span>View source</span>
+                <i data-lucide="external-link" class="w-3 h-3"></i>
+              </a>
+            </div>
+          </template>
+          <div x-show="!activeBuilding.sources || !activeBuilding.sources.length" x-cloak class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500">
+            No information available — source references will appear after a live analysis.
+          </div>
         </div>
       </div>
 
@@ -696,9 +788,9 @@
         <h3 class="text-sm font-black uppercase tracking-wider text-brand-700 mb-2">Target Asset</h3>
         <div class="text-lg font-black" x-text="activeBuilding.address"></div>
         <div class="text-xs text-slate-500 font-mono mt-1">
-          <div>Type: <strong x-text="activeBuilding.type"></strong></div>
-          <div>Built: <strong x-text="activeBuilding.yearBuilt"></strong> · Floors: <strong x-text="activeBuilding.floors"></strong></div>
-          <div>Facade Area: <strong x-text="activeBuilding.facadeArea + ' m²'"></strong></div>
+          <div>Type: <strong x-text="ni(activeBuilding.type)"></strong></div>
+          <div>Built: <strong x-text="ni(activeBuilding.yearBuilt)"></strong> · Floors: <strong x-text="ni(activeBuilding.floors)"></strong></div>
+          <div>Facade Area: <strong x-text="activeBuilding.facadeArea ? activeBuilding.facadeArea + ' m²' : 'No information available'"></strong></div>
         </div>
       </div>
       <div class="text-right">
@@ -768,6 +860,49 @@
       </table>
     </div>
 
+    <div class="mt-8 print-break">
+      <h3 class="text-sm font-black uppercase tracking-wider text-brand-700 mb-3">Confirmed Defects & Evidence</h3>
+      <p class="text-[11px] text-slate-500 mb-3">Shown only when a defect is visible in a photo or reported in online reviews.</p>
+      <div x-show="activeBuilding.confirmedDefects.length">
+        <table class="w-full text-xs border-collapse">
+          <thead>
+            <tr class="border-b-2 border-slate-200 text-left">
+              <th class="py-2 pr-3">Defect</th>
+              <th class="py-2 pr-3">Evidence</th>
+              <th class="py-2">Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="defect in activeBuilding.confirmedDefects" :key="defect.name + defect.evidence">
+              <tr class="border-b border-slate-100 align-top">
+                <td class="py-2 pr-3 font-bold text-red-700" x-text="defect.name"></td>
+                <td class="py-2 pr-3 italic" x-text="'“' + defect.evidence + '”'"></td>
+                <td class="py-2" x-text="defect.source + (defect.author ? ' · ' + defect.author : '')"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+      <div x-show="!activeBuilding.confirmedDefects.length" class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-800">
+        No confirmed defects found in available public sources (images or user reviews). This does not replace a physical inspection.
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <h3 class="text-sm font-black uppercase tracking-wider text-brand-700 mb-3">Data Sources & References</h3>
+      <table class="w-full text-xs border-collapse">
+        <tbody>
+          <template x-for="src in activeBuilding.sources" :key="src.label + src.value">
+            <tr class="border-b border-slate-100 align-top">
+              <td class="py-1.5 pr-3 font-semibold w-1/3" x-text="src.label"></td>
+              <td class="py-1.5 pr-3" x-text="src.value"></td>
+              <td class="py-1.5 text-brand-700" x-text="src.source"></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+
     <div class="mt-8 pt-4 border-t border-slate-200 text-[10px] text-slate-400">
       This report is a diagnostic estimate produced by RaSpect's BuildingConditionScore model. It does not replace a statutory
       inspection. Please consult a licensed building professional before undertaking any repair works.
@@ -808,7 +943,7 @@
 
         simHeight: 42,
         simFrequency: 12,
-        viewMode: "stylized",
+        viewMode: "photo",
         mapInstance: null,
 
         leadForm: { name: "", email: "", phone: "", role: "Building Owner / Asset Manager", notes: "" },
@@ -836,6 +971,11 @@
           financialImpact: { energyWaste: 48500, insuranceSurcharge: 22400, deferredMaintenancePenalty: 185000 },
           dataCompleteness: 62,
           flags: ["Demo data — connect the backend for live building intelligence."],
+          photo: null,
+          images: [],
+          confirmedDefects: [],
+          reviewsNote: null,
+          sources: [],
           data: {
             buildingType: "commercial", height: 158, levels: 45, age: 38,
             buildingMaterial: "glass", roofMaterial: null,
@@ -897,9 +1037,21 @@
           this.reportRef = "BCS-" + now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0") + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
           RaspectData.trackEvent("score_tool_view", {});
           this.$nextTick(() => {
-            lucide.createIcons();
+            this.refreshIcons();
             this.renderCharts();
           });
+        },
+
+        /* Lucide may not be defined at Alpine init (deferred script race) — retry until ready. */
+        refreshIcons() {
+          const tryRun = () => {
+            if (window.lucide && typeof window.lucide.createIcons === "function") {
+              window.lucide.createIcons();
+            } else {
+              setTimeout(tryRun, 120);
+            }
+          };
+          tryRun();
         },
 
         /* ---------- analysis ---------- */
@@ -967,7 +1119,7 @@
               this.hasAnalyzed = true;
               this.hasRunAnalysis = true;
               this.$nextTick(() => {
-                lucide.createIcons();
+                this.refreshIcons();
                 this.renderCharts();
                 this.renderMap();
               });
@@ -989,15 +1141,15 @@
           this.activeBuilding = {
             address: analysis.resolvedAddress || this.searchQuery,
             type: b.building ? b.building : "Building",
-            yearBuilt: year || "Unknown",
-            floors: floors || "—",
-            facadeArea: footprintArea ? footprintArea.toLocaleString() : "—",
+            yearBuilt: year || null,
+            floors: floors || null,
+            facadeArea: footprintArea ? footprintArea.toLocaleString() : null,
             height: height,
             image: "assets/img/default-building.svg",
             googleMapsUrl: "https://www.openstreetmap.org/?mlat=" + coords.lat + "&mlon=" + coords.lon + "#map=18/" + coords.lat + "/" + coords.lon,
             coordinates: (coords.lat && coords.lon)
               ? coords.lat.toFixed(4) + "°, " + coords.lon.toFixed(4) + "°"
-              : "—",
+              : null,
             lat: coords.lat, lon: coords.lon,
             footprint: b.footprint || null,
             safetyScore: s.subScores ? s.subScores.safety : 50,
@@ -1008,6 +1160,11 @@
             financialImpact: s.financial || { energyWaste: 0, insuranceSurcharge: 0, deferredMaintenancePenalty: 0 },
             dataCompleteness: s.dataCompleteness || 50,
             flags: s.flags || [],
+            photo: analysis.images && analysis.images.length ? analysis.images[0] : null,
+            images: analysis.images || [],
+            confirmedDefects: analysis.confirmedDefects || [],
+            reviewsNote: analysis.reviews ? analysis.reviews.note : null,
+            sources: analysis.sources || [],
             data: {
               buildingType: (s.inputs && s.inputs.buildingType) || b.building,
               height: height,
@@ -1023,6 +1180,10 @@
           };
           this.analysisId = analysis.id;
           this.kris = s.kris || [];
+          // Default to the Photo view: it shows the real photo when available, or an
+          // honest "No building photo found" state with a button to switch to the map.
+          this.viewMode = "photo";
+          this.$nextTick(() => { if (this.viewMode === "map") this.renderMap(); });
         },
 
         /* Fallback demo generator (offline). */
@@ -1060,6 +1221,11 @@
             },
             dataCompleteness: 45,
             flags: ["Demo data — the live backend is offline."],
+            photo: null,
+            images: [],
+            confirmedDefects: [],
+            reviewsNote: null,
+            sources: [],
             data: {
               buildingType: matched ? matched.type : "building",
               height: null, levels: matched ? matched.floors : null,
@@ -1070,18 +1236,19 @@
           };
           this.analysisId = null;
           this.kris = [];
+          this.viewMode = "stylized";
         },
 
         /* ---------- lead capture ---------- */
         openInspectionModal() {
           this.leadFormError = "";
           this.showLeadModal = true;
-          this.$nextTick(() => lucide.createIcons());
+          this.$nextTick(() => this.refreshIcons());
         },
         openPdfModal() {
           this.pdfFormError = "";
           this.showPdfModal = true;
-          this.$nextTick(() => lucide.createIcons());
+          this.$nextTick(() => this.refreshIcons());
         },
 
         async submitLeadForm() {
@@ -1179,6 +1346,11 @@
         /* ---------- helpers ---------- */
         ordinal(n) { return RaspectUtils.ordinal(n); },
         formatCurrency(v) { return RaspectUtils.formatCurrency(v); },
+        ni(v) {
+          return (v === null || v === undefined || v === "" || v === "—")
+            ? "No information available"
+            : v;
+        },
         scoreColorText(s) { return s < 45 ? "text-red-600" : s < 70 ? "text-amber-600" : "text-emerald-600"; },
         scoreBadgeClass(s) {
           if (s < 45) return "bg-red-50 text-red-600 border-red-200";

@@ -110,10 +110,26 @@
             <i data-lucide="map" class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5"></i>
             <span><strong>OpenStreetMap tiles</strong> — interactive footprint map (Leaflet)</span>
           </div>
+          <div class="flex items-start space-x-2.5 text-slate-600">
+            <i data-lucide="camera" class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5"></i>
+            <span><strong>Wikimedia Commons</strong> — real building photographs with license & attribution</span>
+          </div>
+          <div class="flex items-start space-x-2.5 text-slate-600">
+            <i data-lucide="message-square" class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5"></i>
+            <span><strong>Google Maps reviews</strong> — user-reported defects (optional API key)</span>
+          </div>
         </div>
         <p class="text-xs text-slate-500 mt-4 leading-relaxed">
-          All sources are free and keyless. Where OpenStreetMap has no record for a field (e.g. construction year),
-          the engine reports the gap in "data completeness" and applies a modest uncertainty penalty — it never fabricates values.
+          Every figure on the score card is traceable to a public source shown under
+          <strong>"Data Sources &amp; References"</strong>. Where a field has no record (e.g. construction year),
+          the engine reports the gap in "data completeness" and shows
+          <strong>"No information available"</strong> — it never fabricates values.
+        </p>
+        <p class="text-xs text-slate-500 mt-3 leading-relaxed">
+          <strong>Photos</strong> are only shown when the file title references the building itself (Wikimedia Commons),
+          with license and author attribution. <strong>Defects</strong> are listed under
+          "Confirmed Defects &amp; Evidence" only when actually visible in a photo or reported in a user review —
+          the "Desk-based Risk Indicators" section is clearly labelled as statistical estimates, not confirmed defects.
         </p>
         <div class="mt-6 flex flex-col sm:flex-row gap-3">
           <a href="score.html" class="btn-cta inline-flex items-center justify-center space-x-2 px-6 py-3 text-sm">

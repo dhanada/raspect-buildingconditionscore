@@ -7,15 +7,18 @@ const router = express.Router();
 const { geocode } = require("../services/geocoder");
 const { queryBuilding } = require("../services/osm");
 const { getClimate } = require("../services/climate");
-const { tileFor } = require("../services/imagery");
+const { tileFor, findBuildingImages } = require("../services/imagery");
+const { findUserReviews } = require("../services/reviews");
 const { computeScore } = require("../scoring");
 const { uid } = require("../db");
 
 module.exports = function scoreRoutes(db) {
   /**
    * POST /api/score  { address }
-   * Resolves the address, pulls real building + climate data, computes the
-   * BuildingConditionScore, stores the analysis, and returns the payload.
+   * Resolves the address, pulls real building + climate data, finds real
+   * building photos (Wikimedia Commons) and user-reported defects
+   * (Google Places, optional key), computes the BuildingConditionScore,
+   * stores the analysis, and returns the payload with per-datum sources.
    */
   router.post("/", async (req, res) => {
     const address = (req.body && req.body.address ? String(req.body.address) : "").trim();
@@ -31,6 +34,34 @@ module.exports = function scoreRoutes(db) {
 
       const score = computeScore({ building: building || {}, climate, geocode: geo });
 
+      // Real photos + user comments (may be empty/unavailable — shown honestly)
+      const name = (building && building.name) || score.inputs.buildingType || "";
+      const [images, reviews] = await Promise.all([
+        name ? findBuildingImages(name, 4) : Promise.resolve([]),
+        name ? findUserReviews(name) : Promise.resolve({ available: false, note: "No building name to search for." })
+      ]);
+
+      // Confirmed defects = ONLY evidence-backed items (user reviews + OSM tags).
+      // Risk indicators (score.kris) are kept separate — they are desk-based estimates.
+      const confirmedDefects = [
+        ...(reviews.defects || []).map((d) => ({
+          name: d.name,
+          pillar: d.pillar,
+          icon: d.icon,
+          source: "Google Maps user review",
+          evidence: d.evidence,
+          author: d.author,
+          date: d.date
+        })),
+        ...((building && building.conditionNotes) || []).map((n) => ({
+          name: "Community-reported condition note",
+          pillar: "safety",
+          icon: "message-square-warning",
+          source: "OpenStreetMap tag",
+          evidence: n
+        }))
+      ];
+
       const analysis = {
         id: uid("ana"),
         address,
@@ -38,7 +69,11 @@ module.exports = function scoreRoutes(db) {
         coordinates: { lat: round6(geo.lat), lon: round6(geo.lon) },
         mapTile: tileFor(geo.lat, geo.lon, 18),
         building: building || null,
+        images,
+        reviews,
+        confirmedDefects,
         score,
+        sources: buildSources(geo, building, climate, score, images),
         generatedAt: new Date().toISOString()
       };
 
@@ -83,3 +118,69 @@ module.exports = function scoreRoutes(db) {
 };
 
 function round6(v) { return Math.round(v * 1e6) / 1e6; }
+
+/* ---------------- source references ---------------- */
+
+const PROVIDER_SOURCE = {
+  nominatim: { name: "OpenStreetMap Nominatim", url: "https://nominatim.org/" },
+  photon: { name: "Photon (Komoot) geocoder", url: "https://photon.komoot.io/" },
+  "open-meteo": { name: "Open-Meteo Geocoding", url: "https://open-meteo.com/en/docs/geocoding-api" }
+};
+
+/** Build an auditable list of { label, value, source, url } for every datum. */
+function buildSources(geo, building, climate, score, images) {
+  const sources = [];
+  const locUrl =
+    "https://www.openstreetmap.org/?mlat=" + geo.lat + "&mlon=" + geo.lon + "#map=17/" + geo.lat + "/" + geo.lon;
+
+  const geoSource = PROVIDER_SOURCE[geo.provider] || { name: geo.provider || "Geocoder", url: locUrl };
+  sources.push({
+    label: "Address resolution",
+    value: geo.displayName,
+    source: geoSource.name,
+    url: geoSource.url
+  });
+
+  if (building) {
+    const osmType = (building.osmId || "").split("/")[0];
+    const osmId = (building.osmId || "").split("/")[1];
+    sources.push({
+      label: "Building footprint & attributes",
+      value: (building.name ? building.name + " · " : "") +
+        (building.building || "building") +
+        (building.buildingLevels ? " · " + building.buildingLevels + " levels" : "") +
+        (building.buildingHeight ? " · " + building.buildingHeight + " m" : ""),
+      source: "OpenStreetMap (Overpass API)",
+      url: osmType && osmId ? `https://www.openstreetmap.org/${osmType}/${osmId}` : locUrl
+    });
+  }
+
+  if (climate) {
+    sources.push({
+      label: "Climate exposure (past 12 months)",
+      value: "Max gust " + climate.maxGustKmh + " km/h · " + climate.annualPrecipMm + " mm rain · max " + climate.maxTempC + "°C",
+      source: "Open-Meteo Historical Weather API",
+      url: "https://open-meteo.com/en/docs/historical-weather-api"
+    });
+  }
+
+  if (images && images.length) {
+    images.forEach((img) => {
+      sources.push({
+        label: "Building photograph",
+        value: img.title + (img.license ? " · " + img.license : ""),
+        source: "Wikimedia Commons" + (img.artist ? " · " + img.artist : ""),
+        url: img.pageUrl
+      });
+    });
+  }
+
+  sources.push({
+    label: "BuildingConditionScore methodology",
+    value: "Composite of Safety, Serviceability & Sustainability indices (0–100)",
+    source: "RaSpect Inspectica",
+    url: "https://dhanada.github.io/raspect-buildingconditionscore/methodology.html"
+  });
+
+  return sources;
+}
