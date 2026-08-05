@@ -27,30 +27,37 @@ module.exports = function scoreRoutes(db) {
     try {
       const geo = await geocode(address);
 
-      // Prefer the EXACT building the geocoder resolved to (Nominatim/Photon
-      // return the OSM way/relation id of the addressed building), falling back
-      // to the nearest building footprint, then a Nominatim name/address lookup.
-      // When the geocoder hit is a ROAD (e.g. "133 Wai Yip Street" resolves to the
-      // street way), skip the exact-element query — street ways can be enormous and
-      // slow Overpass — and go straight to the nearest-building lookup.
-      const geoIsRoad = !!(geo.class === "highway" || isRoadType(geo.type));
-
+      // Robust, fast building resolution:
+      //   - If the geocoder resolved to a specific OSM element, a fast Nominatim
+      //     lookup immediately gives its correct NAME + type (reliable, ~1s).
+      //     We then opportunistically enrich it with full Overpass data (levels,
+      //     height, material, footprint) but never block long for that.
+      //   - Otherwise (e.g. the address resolved to a street, like "133 Wai Yip
+      //     Street"), we fetch the nearest building around the point.
       const [building, climate] = await Promise.all([
         (async () => {
-          // 1) Exact building element via Overpass (full tags + footprint)
-          if (!geoIsRoad && geo.osmType && geo.osmId) {
-            const exact = await queryBuildingById(geo.osmType, geo.osmId);
-            if (exact && exact.building) return exact;
+          const exactOsm = !!(geo.osmType && geo.osmId);
+          const geoIsRoad = !!(geo.class === "highway" || isRoadType(geo.type));
+
+          let nom = null;
+          if (exactOsm && !geoIsRoad) {
+            nom = await queryBuildingByNominatim(geo.osmType, geo.osmId);
           }
-          // 2) Nearest building via Overpass
+
+          // Exact building identified by name — enrich with Overpass if available.
+          if (nom && nom.building) {
+            const enriched = await Promise.race([
+              queryBuildingById(geo.osmType, geo.osmId),
+              new Promise((r) => setTimeout(() => r(null), 8000))
+            ]);
+            if (enriched && enriched.building) return enriched;
+            return nom;
+          }
+
+          // Nearest building around the geocoded point.
           const near = await queryBuilding(geo.lat, geo.lon);
           if (near && near.building) return near;
-          // 3) Last resort: exact element name/address via Nominatim lookup
-          if (!geoIsRoad && geo.osmType && geo.osmId) {
-            const nom = await queryBuildingByNominatim(geo.osmType, geo.osmId);
-            if (nom && nom.building) return nom;
-          }
-          return near; // may be null — scored from climate + defaults
+          return nom; // may be null — scored from climate + defaults
         })(),
         getClimate(geo.lat, geo.lon)
       ]);

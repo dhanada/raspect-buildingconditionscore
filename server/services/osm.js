@@ -8,12 +8,20 @@
  */
 const USER_AGENT = process.env.NOMINATIM_USER_AGENT || "RaSpect-Inspectica/1.0";
 
-const OVERPASS_ENDPOINTS = [
-  process.env.OVERPASS_URL,
-  "https://overpass-api.de/api/interpreter",
+// Mirrors are flaky at times; prefer the ones that are currently responsive.
+// Note: some mirrors are region-limited (e.g. overpass.osm.ch is Swiss-only) and
+// return an EMPTY result for non-Europe — runOverpass() skips empty results so we
+// fall through to a global mirror instead of short-circuiting on no data.
+const OVERPASS_MIRRORS = [
   "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
   "https://overpass.osm.ch/api/interpreter"
-].filter(Boolean);
+];
+const OVERPASS_ENDPOINTS = Array.from(new Set([
+  ...OVERPASS_MIRRORS,
+  ...(process.env.OVERPASS_URL ? [process.env.OVERPASS_URL] : [])
+]));
 
 const cache = new Map(); // `${lat},${lon},${radius}` -> result
 
@@ -22,7 +30,7 @@ const cache = new Map(); // `${lat},${lon},${radius}` -> result
  * @param {number} lon
  * @param {number} radiusMeters search radius around the point
  */
-async function queryBuilding(lat, lon, radiusMeters = 60) {
+async function queryBuilding(lat, lon, radiusMeters = 150) {
   const key = `${lat.toFixed(5)},${lon.toFixed(5)},${radiusMeters}`;
   if (cache.has(key)) return cache.get(key);
 
@@ -82,8 +90,10 @@ async function queryBuildingById(osmType, osmId) {
   return result;
 }
 
-/** Fetch an Overpass query with endpoint failover + timeout. Returns null on total failure. */
-async function runOverpass(overpassQuery, timeoutMs = 7000) {
+/** Fetch an Overpass query with endpoint failover + timeout. Returns null on total failure.
+ *  Skips endpoints that return an EMPTY element list (region-limited mirrors), so a
+ *  global mirror is always preferred when data exists. */
+async function runOverpass(overpassQuery, timeoutMs = 8000) {
   let lastErr = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
@@ -98,7 +108,11 @@ async function runOverpass(overpassQuery, timeoutMs = 7000) {
         signal: AbortSignal.timeout(timeoutMs)
       });
       if (!res.ok) throw new Error(`Overpass HTTP ${res.status} @ ${endpoint}`);
-      return await res.json();
+      const data = await res.json();
+      if (data && Array.isArray(data.elements) && data.elements.length) {
+        return data;
+      }
+      lastErr = new Error(`Overpass empty result @ ${endpoint}`);
     } catch (err) {
       lastErr = err;
     }
