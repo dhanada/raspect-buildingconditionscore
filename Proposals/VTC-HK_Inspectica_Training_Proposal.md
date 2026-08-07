@@ -90,14 +90,14 @@ Contact for this proposal: dhanadam@gmail.com
 
 ## Pricing (Hong Kong Dollars)
 
-Itemised:
-- Course preparation & custom dataset: HKD 6,000
-- Delivery (5×3h) — instructor fees & trainer time: HKD 25,000
-- Materials production (slide decks, lab guides): HKD 2,500
-- Demo Inspectica access / licensing & technical setup: HKD 4,000
-- Travel & incidental expenses (if in-person): HKD 2,500
----
-**Total (excl. VAT): HKD 40,000**
+| Item | Description | Amount (HKD) |
+|---|---|---:|
+| 1 | Course preparation and VTC-custom dataset | 6,000 |
+| 2 | Delivery (5 × 3h), lead trainer and technical lab support | 25,000 |
+| 3 | Materials production (slides and lab guides) | 2,500 |
+| 4 | Inspectica demo setup and temporary licensing | 4,000 |
+| 5 | Travel and incidental expenses (in-person delivery) | 2,500 |
+|  | **Total (excl. VAT)** | **40,000** |
 
 Pricing notes: Up to 12 participants included. Additional participants: HKD 1,500 per person. Custom curriculum changes or additional hands-on days are quoted separately.
 
