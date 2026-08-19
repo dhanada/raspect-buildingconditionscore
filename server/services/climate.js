@@ -16,8 +16,12 @@ async function getClimate(lat, lon) {
   if (cache.has(key)) return cache.get(key);
 
   const now = new Date();
-  const endDate = toISO(now);
-  const startDate = toISO(new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()));
+  // Use *yesterday* as the end of the window: Open-Meteo's archive data for the
+  // current day is not yet published, and its allowed max can lag a day behind
+  // local clocks in timezones ahead of UTC (e.g. UTC+8). A full trailing year of
+  // data is still covered by going back 12 months from yesterday.
+  const endDate = toISO(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
+  const startDate = toISO(new Date(now.getFullYear() - 1, now.getMonth(), now.getDate() - 1));
 
   const url =
     `${API}?latitude=${lat}&longitude=${lon}` +
