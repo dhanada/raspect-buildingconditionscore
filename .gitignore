@@ -19,3 +19,13 @@ desktop.ini
 /server/data/*.db
 /server/data/*.db-wal
 /server/data/*.db-shm
+
+# Project mirrors — tracked in GitLab gitsrc.raspect.ai consulting-projects
+Projects/
+
+# Local API credentials / tokens — never commit
+inspectica-creds.txt
+inspectica-tokens.json
+
+# Python cache
+__pycache__/
