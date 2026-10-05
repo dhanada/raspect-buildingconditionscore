@@ -1,0 +1,137 @@
+:root {
+  --brand-50: #f0fdfa;
+  --brand-100: #ccfbf1;
+  --brand-500: #14b8a6;
+  --brand-600: #0d9488;
+  --brand-700: #0f766e;
+  --brand-900: #134e4a;
+  --text: #0f172a;
+  --muted: #475569;
+  --border: #cbd5e1;
+}
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: Inter, "Segoe UI", Helvetica, Arial, sans-serif;
+  color: var(--text);
+  background: white;
+}
+body {
+  line-height: 1.55;
+  font-size: 12pt;
+}
+.cover-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 297mm;
+  padding: 40px;
+  background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-500) 100%);
+  color: white;
+}
+.cover-panel {
+  width: 100%;
+  max-width: 960px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 24px;
+  padding: 48px 56px;
+  box-shadow: 0 30px 90px rgba(13,148,136,0.16);
+}
+.cover-logo {
+  height: 50px;
+  margin-bottom: 28px;
+}
+.cover-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 11px;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 16px;
+}
+.cover-title {
+  font-size: 48px;
+  line-height: 1.05;
+  margin: 0 0 20px;
+  letter-spacing: -0.03em;
+}
+.cover-subtitle {
+  font-size: 16px;
+  margin: 0 0 28px;
+  max-width: 780px;
+  color: rgba(255,255,255,0.9);
+}
+.cover-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+.cover-meta-item {
+  min-width: 180px;
+}
+.cover-meta-item strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #f8fafc;
+}
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 28px 40px 40px;
+}
+h1, h2, h3, h4 {
+  color: var(--brand-900);
+  margin-top: 1.6em;
+  margin-bottom: 0.8em;
+}
+h1 {
+  font-size: 32px;
+}
+h2 {
+  font-size: 20px;
+}
+h3 {
+  font-size: 16px;
+}
+p, li {
+  color: var(--text);
+}
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 32px 0;
+}
+ul, ol {
+  margin: 0 0 1.2em 1.3em;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0 1.4em;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  vertical-align: top;
+}
+th {
+  background: var(--brand-100);
+  color: var(--brand-700);
+  text-align: left;
+}
+td {
+  background: #ffffff;
+}
+strong {
+  color: var(--brand-700);
+}
+.signature {
+  margin: 1.4em 0 0;
+}
+.page-break {
+  page-break-before: always;
+}
+.footer-note {
+  font-size: 9pt;
+  color: var(--muted);
+}
