@@ -8,9 +8,11 @@ window.RaspectUtils = (() => {
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-  /** Format a number as USD currency. */
+  /** Format a number as USD currency. Missing/unknown values render as "—"
+   *  rather than a misleading "$0" (used for financial estimates that may be
+   *  unavailable when public building data is insufficient). */
   function formatCurrency(val, prefix = "$") {
-    if (val === null || val === undefined || isNaN(val)) return prefix + "0";
+    if (val === null || val === undefined || isNaN(val)) return "—";
     return prefix + Number(val).toLocaleString("en-US", { maximumFractionDigits: 0 });
   }
 

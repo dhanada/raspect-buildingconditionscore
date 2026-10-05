@@ -42,13 +42,15 @@ npm install
 copy .env.example .env     # adjust if needed
 node index.js              # → http://localhost:4000/api
 ```
-2. Serve the frontend (PowerShell static server):
+2. Serve the frontend (PowerShell static server, committed in this repo):
 ```powershell
 powershell -ExecutionPolicy Bypass -File serve.ps1 -Port 8099
 # → http://localhost:8099/
 ```
 
 The frontend auto-detects `localhost` and calls `http://localhost:4000/api`. If the backend is offline, the site gracefully falls back to demo data and shows a "Demo mode" notice.
+
+> **Admin token:** the back-office endpoints (`GET /api/leads`, `PATCH/DELETE /api/leads/...`, `GET /api/messages`) require the `ADMIN_TOKEN` environment variable. Set it in `server/.env` (e.g. `ADMIN_TOKEN=<a long random string>`) and enter the same token in the **Leads Admin** page to read and manage leads. Lead capture (`POST /api/leads`) and contact forms (`POST /api/messages`) remain public.
 
 ---
 
@@ -59,11 +61,13 @@ The frontend auto-detects `localhost` and calls `http://localhost:4000/api`. If 
 | `GET`  | `/api/health` | Health check |
 | `POST` | `/api/score` | `{ address }` → geocode + building data + climate + score (real) |
 | `GET`  | `/api/score/:id` | Retrieve a stored analysis |
-| `GET`  | `/api/leads` | List leads |
+| `GET`  | `/api/leads` 🔒 | List leads (requires `X-Admin-Token`) |
 | `POST` | `/api/leads` | Capture a lead (name, email, building, score, sub-scores…) |
-| `PATCH`| `/api/leads/:id` | Update status / notes |
-| `DELETE` | `/api/leads` · `/api/leads/:id` | Clear / delete leads |
-| `GET`/`POST` | `/api/messages` | Contact messages |
+| `PATCH`| `/api/leads/:id` 🔒 | Update status / notes |
+| `DELETE` | `/api/leads` · `/api/leads/:id` 🔒 | Clear / delete leads |
+| `GET`/`POST` | `/api/messages` | Contact messages (`GET` requires `X-Admin-Token`) |
+
+> 🔒 = admin endpoint — requires the `ADMIN_TOKEN` header `X-Admin-Token` (or `Authorization: Bearer <token>`).
 
 ---
 

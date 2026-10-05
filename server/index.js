@@ -10,6 +10,7 @@ require("dotenv").config();
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
+const rateLimit = require("express-rate-limit");
 
 const { openDb } = require("./db");
 const scoreRoutes = require("./routes/score");
@@ -20,6 +21,11 @@ const PORT = process.env.PORT || 4000;
 const DB_PATH = path.resolve(__dirname, process.env.SQLITE_PATH || "./data/raspect.db");
 
 const app = express();
+
+// We are (or will be) behind Railway/Render proxies — trust the first hop so
+// express-rate-limit keys on the real client IP instead of the proxy's.
+app.set("trust proxy", 1);
+
 app.use(express.json({ limit: "1mb" }));
 
 // CORS — allow the configured frontend origin(s).
@@ -30,6 +36,24 @@ app.use(cors({ origin: origins, methods: ["GET", "POST", "PATCH", "DELETE"], cre
 
 // Open the database
 const db = openDb(DB_PATH);
+
+// ---- Rate limiting ----
+// /api/score fans out to public third-party APIs (Nominatim, Overpass,
+// Open-Meteo) on every call — a tight limit protects those services and us
+// from abuse. Lead/message endpoints get a generous shared limit.
+const jsonRateLimit = (limit, windowMs = 60 * 1000) =>
+  rateLimit({
+    windowMs,
+    limit,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    handler: (req, res) =>
+      res.status(429).json({ error: "Too many requests — please try again shortly." })
+  });
+
+app.use("/api/score", jsonRateLimit(parseInt(process.env.SCORE_RATE_LIMIT, 10) || 30));
+app.use("/api/leads", jsonRateLimit(parseInt(process.env.LEAD_RATE_LIMIT, 10) || 60));
+app.use("/api/messages", jsonRateLimit(parseInt(process.env.LEAD_RATE_LIMIT, 10) || 60));
 
 // ---- Health check ----
 app.get("/api/health", (req, res) => {
@@ -44,10 +68,16 @@ app.use("/api/messages", messageRoutes(db));
 // 404 for anything else
 app.use((req, res) => res.status(404).json({ error: "Not found" }));
 
-// Central error handler
+// Central error handler.
+// Respect the status set by libraries (body-parser → 400/413, etc.) instead of
+// flattening every error to 500. Only 5xx errors are logged and masked; 4xx
+// messages are safe to expose (validation/parse feedback).
 app.use((err, req, res, next) => {
-  console.error("[API]", err);
-  res.status(500).json({ error: "Internal server error" });
+  const status = err.status || err.statusCode || 500;
+  if (status >= 500) console.error("[API]", err);
+  res.status(status).json({
+    error: status < 500 ? (err.message || "Bad request") : "Internal server error"
+  });
 });
 
 app.listen(PORT, () => {

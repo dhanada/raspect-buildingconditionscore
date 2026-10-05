@@ -5,6 +5,9 @@ const express = require("express");
 const router = express.Router();
 
 const { uid } = require("../db");
+const { requireAdmin } = require("../auth");
+
+const VALID_STATUSES = new Set(["New", "Contacted", "Qualified", "Proposal", "Won", "Lost"]);
 
 module.exports = function leadRoutes(db) {
   const rowToLead = (r) => r && ({
@@ -16,14 +19,14 @@ module.exports = function leadRoutes(db) {
     createdAt: r.created_at, updatedAt: r.updated_at
   });
 
-  /** GET /api/leads — list all leads (newest first). */
-  router.get("/", (req, res) => {
+  /** GET /api/leads — list all leads (newest first). Requires admin token. */
+  router.get("/", requireAdmin, (req, res) => {
     const rows = db.prepare("SELECT * FROM leads ORDER BY created_at DESC").all();
     res.json(rows.map(rowToLead));
   });
 
-  /** GET /api/leads/stats — aggregate stats for the admin dashboard. */
-  router.get("/stats", (req, res) => {
+  /** GET /api/leads/stats — aggregate stats for the admin dashboard. Requires admin token. */
+  router.get("/stats", requireAdmin, (req, res) => {
     const total = db.prepare("SELECT COUNT(*) c FROM leads").get().c;
     const fresh = db.prepare("SELECT COUNT(*) c FROM leads WHERE status = 'New'").get().c;
     const won = db.prepare("SELECT COUNT(*) c FROM leads WHERE status IN ('Qualified','Won')").get().c;
@@ -44,7 +47,7 @@ module.exports = function leadRoutes(db) {
 
     const now = new Date().toISOString();
     const id = uid("lead");
-    const score = b.score || null;
+    const score = b.score != null ? b.score : null; // keep a legitimate 0
     const sub = b.subScores || {};
 
     db.prepare(
@@ -60,12 +63,15 @@ module.exports = function leadRoutes(db) {
     res.status(201).json(rowToLead(db.prepare("SELECT * FROM leads WHERE id = ?").get(id)));
   });
 
-  /** PATCH /api/leads/:id — update status (and/or notes). */
-  router.patch("/:id", (req, res) => {
+  /** PATCH /api/leads/:id — update status (and/or notes). Requires admin token. */
+  router.patch("/:id", requireAdmin, (req, res) => {
     const existing = db.prepare("SELECT * FROM leads WHERE id = ?").get(req.params.id);
     if (!existing) return res.status(404).json({ error: "Lead not found" });
 
     const status = req.body.status || existing.status;
+    if (!VALID_STATUSES.has(status)) {
+      return res.status(400).json({ error: "Invalid status — expected one of: " + [...VALID_STATUSES].join(", ") });
+    }
     const notes = req.body.notes !== undefined ? req.body.notes : existing.notes;
     const now = new Date().toISOString();
 
@@ -75,14 +81,15 @@ module.exports = function leadRoutes(db) {
     res.json(rowToLead(db.prepare("SELECT * FROM leads WHERE id = ?").get(req.params.id)));
   });
 
-  /** DELETE /api/leads/:id */
-  router.delete("/:id", (req, res) => {
-    db.prepare("DELETE FROM leads WHERE id = ?").run(req.params.id);
+  /** DELETE /api/leads/:id — requires admin token. */
+  router.delete("/:id", requireAdmin, (req, res) => {
+    const result = db.prepare("DELETE FROM leads WHERE id = ?").run(req.params.id);
+    if (!result.changes) return res.status(404).json({ error: "Lead not found" });
     res.json({ ok: true });
   });
 
-  /** DELETE /api/leads — clear all */
-  router.delete("/", (req, res) => {
+  /** DELETE /api/leads — clear all. Requires admin token. */
+  router.delete("/", requireAdmin, (req, res) => {
     db.prepare("DELETE FROM leads").run();
     res.json({ ok: true });
   });

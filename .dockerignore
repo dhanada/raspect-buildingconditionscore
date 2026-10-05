@@ -14,7 +14,6 @@ methodology.html
 contact.html
 data
 *.md
-serve.ps1
 .gitignore
 railway.toml
 render.yaml

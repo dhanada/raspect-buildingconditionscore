@@ -5,10 +5,11 @@ const express = require("express");
 const router = express.Router();
 
 const { uid } = require("../db");
+const { requireAdmin } = require("../auth");
 
 module.exports = function messageRoutes(db) {
-  /** GET /api/messages — list contact messages. */
-  router.get("/", (req, res) => {
+  /** GET /api/messages — list contact messages. Requires admin token. */
+  router.get("/", requireAdmin, (req, res) => {
     const rows = db.prepare("SELECT * FROM messages ORDER BY created_at DESC").all();
     res.json(rows);
   });

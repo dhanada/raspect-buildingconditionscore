@@ -108,13 +108,24 @@ function computeScore({ building, climate, geocode }) {
   const overall = Math.round(safetyScore * 0.4 + serviceabilityScore * 0.35 + sustainabilityScore * 0.25);
 
   /* ---------------- FINANCIAL IMPACT (illustrative) ---------------- */
-  const footprintArea = building.footprintAreaM2 || 1200;
-  const floors = levels || (building.buildingHeight ? Math.max(1, Math.round(building.buildingHeight / 3.2)) : 20);
-  const floorArea = footprintArea * floors;
+  // Honest estimates only: when footprint / height / age are unknown we return
+  // null instead of inventing a "typical" 1200 m² / 20-floor building. The
+  // frontend renders null as "—" with an "insufficient data" note.
+  const footprintArea = building.footprintAreaM2 || null;
+  const floors = levels || (building.buildingHeight ? Math.max(1, Math.round(building.buildingHeight / 3.2)) : null);
+  const floorArea = footprintArea != null && floors != null ? footprintArea * floors : null;
 
-  const energyWaste = Math.round((120 - sustainabilityScore) * floorArea * 0.9);
-  const insuranceSurcharge = Math.round((120 - safetyScore) * floorArea * 0.35);
-  const deferredPenalty = Math.round(((age || 30) - 20) * 1500 + (100 - overall) * 900);
+  const energyWaste = floorArea != null
+    ? Math.round((100 - sustainabilityScore) * floorArea * 0.9)
+    : null;
+  const insuranceSurcharge = floorArea != null
+    ? Math.round((100 - safetyScore) * floorArea * 0.35)
+    : null;
+  // Deferred maintenance scales with age; never negative (a young building
+  // does not get a "bonus"), and requires a known construction year.
+  const deferredPenalty = age != null
+    ? Math.max(0, Math.round((age - 20) * 1500 + (100 - overall) * 900))
+    : null;
 
   /* ---------------- KRIs (consolidated) ---------------- */
   const kriLevel = (score) => (score < 45 ? "CRITICAL" : score < 65 ? "HIGH" : "MODERATE");
@@ -146,6 +157,8 @@ function computeScore({ building, climate, geocode }) {
   if (age && age > 40) flags.push("Structure older than 40 years");
   if (heat > 38) flags.push("Extreme summer heat — heavy HVAC loading");
   if (missing.length) flags.push("Limited public data: " + missing.join(", ") + " assumed from defaults");
+  if (floorArea == null) flags.push("Insufficient footprint data — financial estimates are not shown");
+  if (age == null) flags.push("Construction year unknown — deferred-maintenance estimate not shown");
 
   const completeness = Math.round(
     (1 - missing.length / 8) * 100
@@ -166,8 +179,8 @@ function computeScore({ building, climate, geocode }) {
       levels: building.buildingLevels,
       roofMaterial: building.roofMaterial,
       buildingMaterial: building.buildingMaterial,
-      footprintAreaM2: Math.round(footprintArea || 0),
-      floorAreaM2: Math.round(floorArea),
+      footprintAreaM2: footprintArea != null ? Math.round(footprintArea) : null,
+      floorAreaM2: floorArea != null ? Math.round(floorArea) : null,
       maxGustKmh: round(gust),
       annualPrecipMm: round(precip),
       maxTempC: heat

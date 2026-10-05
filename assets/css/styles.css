@@ -159,11 +159,17 @@ input[type="range"]::-moz-range-thumb {
 /* Modal panel should scroll when taller than viewport */
 .modal-scroll { max-height: 90vh; overflow-y: auto; }
 
-/* Print styles — generate a clean executive report via window.print() */
+/* Print styles — generate a clean executive report via window.print().
+   On pages that contain a #print-report block, hide the entire app UI
+   (hero, dashboard, nav, modals) so only the report prints. On other pages
+   (e.g. landing), reveal scroll animations so content is not blank. */
 @media print {
   .no-print { display: none !important; }
   body { background: #fff !important; }
+  body:has(#print-report) > *:not(#print-report) { display: none !important; }
   .print-report { display: block !important; }
   .print-break { page-break-before: always; }
+  .reveal { opacity: 1 !important; transform: none !important; }
+  #toast-container { display: none !important; }
 }
 .print-report { display: none; }

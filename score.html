@@ -101,11 +101,13 @@
       </div>
     </section>
 
-    <!-- Demo-mode notice -->
-    <div x-show="demoMode && hasRunAnalysis" x-cloak x-transition class="flex items-center space-x-3 p-4 rounded-2xl border border-amber-300 bg-amber-50/90 text-amber-800 text-xs shadow-sm">
+    <!-- Demo-mode notice (also shown for the initial sample data so visitors
+         never mistake fabricated analytics for a live result) -->
+    <div x-show="demoMode || !hasRunAnalysis" x-cloak x-transition class="flex items-center space-x-3 p-4 rounded-2xl border border-amber-300 bg-amber-50/90 text-amber-800 text-xs shadow-sm">
       <i data-lucide="plug-zap" class="w-5 h-5 flex-shrink-0 text-amber-600"></i>
       <div>
-        <strong>Demo mode.</strong> The live backend is unreachable, so sample data is shown.
+        <strong x-text="demoMode ? 'Demo mode.' : 'Sample preview.'"></strong>
+        <span x-text="demoMode ? ' The live backend is unreachable, so sample data is shown.' : ' Enter an address and press Generate Score to run a live analysis.'"></span>
         <span class="font-mono" x-text="window.APP_CONFIG ? window.APP_CONFIG.apiBase : ''"></span>
       </div>
     </div>
@@ -467,6 +469,10 @@
                 <span class="text-2xl font-black text-red-600 font-mono" x-text="formatCurrency(activeBuilding.financialImpact.deferredMaintenancePenalty)"></span>
                 <span class="text-[10px] text-slate-500 block font-semibold mt-0.5">Compounding structural decay</span>
               </div>
+            </div>
+            <div x-show="!financialEstimateAvailable" x-cloak class="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-center space-x-2 shadow-sm">
+              <i data-lucide="info" class="w-4 h-4 text-brand-600 flex-shrink-0"></i>
+              <span>Insufficient public data (building footprint / construction year) for a reliable financial estimate — values shown as "—".</span>
             </div>
             <div class="mt-3 p-3 rounded-xl bg-white border border-slate-200/80 text-xs text-slate-700 flex items-center space-x-2 shadow-sm">
               <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-500 flex-shrink-0"></i>
@@ -1163,7 +1169,7 @@
             sustainabilityScore: s.subScores ? s.subScores.sustainability : 50,
             peerGroupCount: 250,
             peerPercentile: RaspectUtils.clamp ? RaspectUtils.clamp(105 - s.overall, 2, 98) : Math.max(2, Math.min(98, 105 - s.overall)),
-            financialImpact: s.financial || { energyWaste: 0, insuranceSurcharge: 0, deferredMaintenancePenalty: 0 },
+            financialImpact: s.financial || { energyWaste: null, insuranceSurcharge: null, deferredMaintenancePenalty: null },
             dataCompleteness: s.dataCompleteness || 50,
             flags: s.flags || [],
             photo: analysis.images && analysis.images.length ? analysis.images[0] : null,
@@ -1352,6 +1358,10 @@
         /* ---------- helpers ---------- */
         ordinal(n) { return RaspectUtils.ordinal(n); },
         formatCurrency(v) { return RaspectUtils.formatCurrency(v); },
+        get financialEstimateAvailable() {
+          const f = this.activeBuilding.financialImpact || {};
+          return f.energyWaste != null || f.insuranceSurcharge != null || f.deferredMaintenancePenalty != null;
+        },
         ni(v) {
           return (v === null || v === undefined || v === "" || v === "—")
             ? "No information available"

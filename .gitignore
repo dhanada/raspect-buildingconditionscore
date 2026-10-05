@@ -1,5 +1,4 @@
 # Local dev
-serve.ps1
 *.log
 
 # Node backend
